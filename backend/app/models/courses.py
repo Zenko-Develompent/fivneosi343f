@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Optional
 
 from sqlmodel import SQLModel, Field
 
@@ -17,26 +17,39 @@ class TaskType(str, Enum):
     QUIZ = "quiz"
 
 
+class CourseCategory(SQLModel, table=True):
+    __tablename__ = "course_category"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str = Field(index=True, unique=True)
+
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
 class Course(SQLModel, table=True):
+    __tablename__ = "course"
+
     id: Optional[int] = Field(default=None, primary_key=True)
 
     title: str
     description: str | None = None
     is_published: bool = Field(default=False)
+    category_id: int | None = Field(default=None, foreign_key="course_category.id", index=True)
 
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
 
 class Module(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    __tablename__ = "module"
 
+    id: Optional[int] = Field(default=None, primary_key=True)
     course_id: int = Field(foreign_key="course.id", index=True)
 
     title: str
     description: str | None = None
     order_index: int = Field(default=1, index=True)
-
     is_published: bool = Field(default=False)
 
     created_at: datetime = Field(default_factory=utc_now)
@@ -44,8 +57,9 @@ class Module(SQLModel, table=True):
 
 
 class Topic(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    __tablename__ = "topic"
 
+    id: Optional[int] = Field(default=None, primary_key=True)
     module_id: int = Field(foreign_key="module.id", index=True)
 
     title: str
@@ -58,8 +72,9 @@ class Topic(SQLModel, table=True):
 
 
 class Task(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    __tablename__ = "task"
 
+    id: Optional[int] = Field(default=None, primary_key=True)
     topic_id: int = Field(foreign_key="topic.id", index=True)
 
     title: str
@@ -69,7 +84,6 @@ class Task(SQLModel, table=True):
     json_path: str | None = None
     correct_answers: str | None = None
     xp_reward: int = Field(default=0)
-
     is_published: bool = Field(default=False)
 
     created_at: datetime = Field(default_factory=utc_now)

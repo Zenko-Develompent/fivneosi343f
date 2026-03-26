@@ -1,1 +1,1 @@
-from app.models.courses import TaskType, Course, Module, Topic, Task
+from app.models.courses import CourseCategory, TaskType, Course, Module, Topic, Task
