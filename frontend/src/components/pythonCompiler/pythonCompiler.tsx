@@ -53,12 +53,6 @@ interface FriendlyRuntimeError {
   lineNumber: number | null;
 }
 
-const DEFAULT_CODE = [
-  "print('Привет из Pyodide!')",
-  "for i in range(3):",
-  "    print('step', i + 1)",
-].join("\n");
-
 const FRIENDLY_ERROR_MAP: Record<string, { headline: string; hint: string }> = {
   SyntaxError: {
     headline: "Я не понимаю эту строку",
@@ -297,7 +291,7 @@ export function preloadPythonCompilerAssets(): Promise<void> {
 
 export default function PythonCompiler({
   title = "Python-песочница",
-  initialCode = DEFAULT_CODE,
+  initialCode = "",
   editorHeight = 320,
   className = "",
 }: PythonCompilerProps) {

@@ -1,7 +1,18 @@
-'use client'
+'use client';
 
 import styles from "./sidebar.module.css";
 import CoinIcon from "@/shared/assets/icons/coin.svg";
+
+interface SidebarLesson {
+  lessonId: string;
+  title: string;
+}
+
+interface SidebarTheme {
+  themeId: string;
+  title: string;
+  lessons: SidebarLesson[];
+}
 
 interface SidebarProps {
   totalSteps: number;
@@ -9,6 +20,9 @@ interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   courseTitle?: string;
+  themes: SidebarTheme[];
+  activeThemeId?: string;
+  activeLessonId?: string;
   onThemeSelect: (themeId: string) => void;
   onLessonSelect: (themeId: string, lessonId: string) => void;
 }
@@ -18,7 +32,10 @@ export default function Sidebar({
   completedSteps,
   isOpen,
   onToggle,
-  courseTitle = "Название",
+  courseTitle = "Название курса",
+  themes,
+  activeThemeId,
+  activeLessonId,
   onThemeSelect,
   onLessonSelect,
 }: SidebarProps) {
@@ -39,13 +56,9 @@ export default function Sidebar({
 
       <div className={styles.sidebarBody}>
         <h2 className={styles.title2}>{courseTitle}</h2>
-        <h3 className={styles.title3}>
-          Шаг {safeCompletedSteps} из {safeTotalSteps}
-        </h3>
+        <h3 className={styles.title3}>Шаг {safeCompletedSteps} из {safeTotalSteps}</h3>
         <div className={styles.coinsRow}>
-          <span className={styles.coinsText}>
-            Получено {safeCompletedSteps} из {safeTotalSteps}
-          </span>
+          <span className={styles.coinsText}>Пройдено {safeCompletedSteps} из {safeTotalSteps}</span>
           <img className={styles.coinIcon} src={CoinIcon.src} alt="Монета" />
         </div>
         <h3 className={styles.title3}>Прогресс</h3>
@@ -58,65 +71,39 @@ export default function Sidebar({
 
         <div className={styles.module}>
           <ul className={styles.themeList}>
-            <li className={styles.themeItem}>
-              <button
-                type="button"
-                className={styles.themeButton}
-                onClick={() => onThemeSelect("theme-1")}
-              >
-                Тема 1
-              </button>
-              <ul className={styles.lessonList}>
-                <li>
-                  <button
-                    type="button"
-                    className={styles.lessonButton}
-                    onClick={() => onLessonSelect("theme-1", "lesson-1")}
-                  >
-                    Урок 1
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    className={styles.lessonButton}
-                    onClick={() => onLessonSelect("theme-1", "lesson-2")}
-                  >
-                    Урок 2
-                  </button>
-                </li>
-              </ul>
-            </li>
+            {themes.map((theme) => {
+              const isThemeActive = theme.themeId === activeThemeId;
 
-            <li className={styles.themeItem}>
-              <button
-                type="button"
-                className={styles.themeButton}
-                onClick={() => onThemeSelect("theme-2")}
-              >
-                Тема 2
-              </button>
-              <ul className={styles.lessonList}>
-                <li>
+              return (
+                <li className={styles.themeItem} key={theme.themeId}>
                   <button
                     type="button"
-                    className={styles.lessonButton}
-                    onClick={() => onLessonSelect("theme-2", "lesson-1")}
+                    className={`${styles.themeButton} ${isThemeActive ? styles.themeButtonActive : ""}`.trim()}
+                    onClick={() => onThemeSelect(theme.themeId)}
                   >
-                    Урок 1
+                    {theme.title}
                   </button>
+                  <ul className={styles.lessonList}>
+                    {theme.lessons.map((lesson) => {
+                      const isLessonActive =
+                        theme.themeId === activeThemeId && lesson.lessonId === activeLessonId;
+
+                      return (
+                        <li key={`${theme.themeId}-${lesson.lessonId}`}>
+                          <button
+                            type="button"
+                            className={`${styles.lessonButton} ${isLessonActive ? styles.lessonButtonActive : ""}`.trim()}
+                            onClick={() => onLessonSelect(theme.themeId, lesson.lessonId)}
+                          >
+                            {lesson.title}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </li>
-                <li>
-                  <button
-                    type="button"
-                    className={styles.lessonButton}
-                    onClick={() => onLessonSelect("theme-2", "lesson-2")}
-                  >
-                    Урок 2
-                  </button>
-                </li>
-              </ul>
-            </li>
+              );
+            })}
           </ul>
         </div>
       </div>
