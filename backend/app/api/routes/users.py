@@ -14,9 +14,36 @@ from app.core.security import (
     verify_password,
     hash_password,
 )
-from app.models.models import User
+from app.models.models import User, UserCourse
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+class CategoryPublic(SQLModel):
+    id: int
+    title: str
+
+
+class MyCoursePublic(SQLModel):
+    course_id: int
+    title: str
+    description: str | None = None
+    is_published: bool
+    progress_percent: float
+    xp_earned: int
+    status: str
+    category: CategoryPublic | None = None
+
+
+class UserPublic(SQLModel):
+    id: int
+    first_name: str
+    last_name: str | None = None
+    mail: str
+    level: int
+    total_xp: int
+    role_id: int
+    courses: list[MyCoursePublic] = Field(default_factory=list)
+
 
 
 class UserRegister(SQLModel):
@@ -43,7 +70,7 @@ class UserPublic(SQLModel):
 
 
 
-@router.post("/users/register")
+@router.post("/register")
 def register_user(payload: UserRegister, session: Session = Depends(get_session)):
     existing_user = session.exec(
         select(User).where(User.mail == payload.mail)
@@ -101,6 +128,8 @@ def login(payload: UserLogin, session: Session = Depends(get_session)):
     }
 
 
+
+
 @router.get("/me", response_model=UserPublic)
 def get_my_profile(
     user_id: int = Depends(get_current_user_id),
@@ -114,7 +143,46 @@ def get_my_profile(
             detail="User not found",
         )
 
-    return user
+    user_courses = session.exec(
+        select(UserCourse).where(UserCourse.user_id == user_id)
+    ).all()
+
+    courses = []
+
+    for user_course in user_courses:
+        course = user_course.course
+
+        if not course or not course.is_published:
+            continue
+
+        courses.append(
+            MyCoursePublic(
+                course_id=course.id,
+                title=course.title,
+                description=course.description,
+                is_published=course.is_published,
+                progress_percent=user_course.progress_percent,
+                xp_earned=user_course.xp_earned,
+                status=user_course.status.value,
+                category=CategoryPublic(
+                    id=course.category.id,
+                    title=course.category.title,
+                ) if course.category else None,
+            )
+        )
+
+    return UserPublic(
+        id=user.id,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        mail=user.mail,
+        level=user.level,
+        total_xp=user.total_xp,
+        role_id=user.role_id,
+        courses=courses,
+    )
+
+
 
 
 @router.get("/refresh")
@@ -138,4 +206,3 @@ def get_roles(session: Session = Depends(get_session)):
     ).all()
 
     return roles
-
