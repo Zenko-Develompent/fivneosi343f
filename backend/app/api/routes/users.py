@@ -9,6 +9,12 @@ from app.services.auth import create_tokens, refresh_user_id
 router = APIRouter(prefix="/users", tags=["users"])
 
 
+@router.post("/role")
+def add_role(role: Role, session: Session = Depends(get_session)):
+    session.add(role)
+    session.commit()
+
+
 @router.post("/register")
 def register_user(user: User, session: Session = Depends(get_session)):
     session.add(user)
@@ -48,3 +54,9 @@ def login(mail: str, password: str, session: Session = Depends(get_session)):
 def refresh_user(user_id: int = Depends(refresh_user_id)):
     access_token, refresh_token = create_tokens(user_id)
     return {"ACCESS_TOKEN": access_token, "REFRESH_TOKEN": refresh_token}
+
+
+@router.get("/")
+def get_all_users(session: Session = Depends(get_session)):
+    stmt = select(User)
+    return session.exec(stmt).fetchall()
