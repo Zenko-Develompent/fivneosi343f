@@ -36,8 +36,9 @@ class TaskPublicResponse(SQLModel, table=False):
     description: str | None = None
     task_type: TaskType
     order_index: int
-    json_path: str | None = None
+    md_path: str | None = None
     xp_reward: int
+    is_published: bool
 
 
 class TopicPublicResponse(SQLModel, table=False):
@@ -73,7 +74,10 @@ def _not_found(detail: str) -> HTTPException:
 
 
 def _serialize_category(category: CourseCategory) -> CategoryPublicResponse:
-    return CategoryPublicResponse(id=category.id, title=category.title)
+    return CategoryPublicResponse(
+        id=category.id,
+        title=category.title,
+    )
 
 
 def _serialize_course(
@@ -87,16 +91,6 @@ def _serialize_course(
         description=course.description,
         category_id=course.category_id,
         category=_serialize_category(category) if category is not None else None,
-    )
-
-
-def _serialize_course_short(course: Course) -> CourseShortPublicResponse:
-    return CourseShortPublicResponse(
-        id=course.id,
-        title=course.title,
-        description=course.description,
-        category_id=course.category_id,
-        category=None,
     )
 
 
@@ -128,8 +122,9 @@ def _serialize_task(task: Task) -> TaskPublicResponse:
         description=task.description,
         task_type=task.task_type,
         order_index=task.order_index,
-        json_path=task.json_path,
+        md_path=task.md_path,
         xp_reward=task.xp_reward,
+        is_published=task.is_published,
     )
 
 
@@ -156,13 +151,12 @@ def _get_published_course_or_404(session: Session, course_id: int) -> Course:
     return course
 
 
-def _get_published_module_or_404(session: Session, module_id: int) -> Module:
+def _get_module_of_published_course_or_404(session: Session, module_id: int) -> Module:
     statement = (
         select(Module)
         .join(Course, Module.course_id == Course.id)
         .where(
             Module.id == module_id,
-            Module.is_published.is_(True),
             Course.is_published.is_(True),
         )
     )
@@ -172,15 +166,13 @@ def _get_published_module_or_404(session: Session, module_id: int) -> Module:
     return module
 
 
-def _get_published_topic_or_404(session: Session, topic_id: int) -> Topic:
+def _get_topic_of_published_course_or_404(session: Session, topic_id: int) -> Topic:
     statement = (
         select(Topic)
         .join(Module, Topic.module_id == Module.id)
         .join(Course, Module.course_id == Course.id)
         .where(
             Topic.id == topic_id,
-            Topic.is_published.is_(True),
-            Module.is_published.is_(True),
             Course.is_published.is_(True),
         )
     )
@@ -190,25 +182,19 @@ def _get_published_topic_or_404(session: Session, topic_id: int) -> Topic:
     return topic
 
 
-def _list_published_modules(session: Session, course_id: int) -> list[Module]:
+def _list_modules(session: Session, course_id: int) -> list[Module]:
     statement = (
         select(Module)
-        .where(
-            Module.course_id == course_id,
-            Module.is_published.is_(True),
-        )
+        .where(Module.course_id == course_id)
         .order_by(Module.order_index, Module.id)
     )
     return list(session.exec(statement).all())
 
 
-def _list_published_topics(session: Session, module_id: int) -> list[Topic]:
+def _list_topics(session: Session, module_id: int) -> list[Topic]:
     statement = (
         select(Topic)
-        .where(
-            Topic.module_id == module_id,
-            Topic.is_published.is_(True),
-        )
+        .where(Topic.module_id == module_id)
         .order_by(Topic.order_index, Topic.id)
     )
     return list(session.exec(statement).all())
@@ -240,6 +226,7 @@ def list_courses(
         .limit(limit)
     )
     courses = session.exec(statement).all()
+
     categories_by_id = _get_categories_map(
         session,
         [course.category_id for course in courses if course.category_id is not None],
@@ -277,7 +264,7 @@ def list_course_modules(
     session: Session = Depends(get_session),
 ) -> list[ModulePublicResponse]:
     course = _get_published_course_or_404(session, course_id)
-    modules = _list_published_modules(session, course.id)
+    modules = _list_modules(session, course.id)
     return [_serialize_module(module) for module in modules]
 
 
@@ -286,8 +273,8 @@ def list_module_topics(
     module_id: int,
     session: Session = Depends(get_session),
 ) -> list[TopicPublicResponse]:
-    module = _get_published_module_or_404(session, module_id)
-    topics = _list_published_topics(session, module.id)
+    module = _get_module_of_published_course_or_404(session, module_id)
+    topics = _list_topics(session, module.id)
     return [_serialize_topic(topic) for topic in topics]
 
 
@@ -296,7 +283,7 @@ def list_topic_tasks(
     topic_id: int,
     session: Session = Depends(get_session),
 ) -> list[TaskPublicResponse]:
-    topic = _get_published_topic_or_404(session, topic_id)
+    topic = _get_topic_of_published_course_or_404(session, topic_id)
     tasks = _list_published_tasks(session, topic.id)
     return [_serialize_task(task) for task in tasks]
 
@@ -309,7 +296,7 @@ def get_course_tree(
     course = _get_published_course_or_404(session, course_id)
     category = session.get(CourseCategory, course.category_id) if course.category_id else None
 
-    modules = _list_published_modules(session, course.id)
+    modules = _list_modules(session, course.id)
     module_ids = [module.id for module in modules]
 
     topics_by_module_id: dict[int, list[Topic]] = defaultdict(list)
@@ -318,10 +305,7 @@ def get_course_tree(
     if module_ids:
         topics_statement = (
             select(Topic)
-            .where(
-                Topic.module_id.in_(module_ids),
-                Topic.is_published.is_(True),
-            )
+            .where(Topic.module_id.in_(module_ids))
             .order_by(Topic.order_index, Topic.id)
         )
         topics = session.exec(topics_statement).all()
@@ -340,12 +324,14 @@ def get_course_tree(
                 .order_by(Task.order_index, Task.id)
             )
             tasks = session.exec(tasks_statement).all()
+
             for task in tasks:
                 tasks_by_topic_id[task.topic_id].append(task)
 
     serialized_modules: list[ModuleTreePublicResponse] = []
     for module in modules:
         serialized_topics: list[TopicTreePublicResponse] = []
+
         for topic in topics_by_module_id.get(module.id, []):
             serialized_topics.append(
                 TopicTreePublicResponse(
@@ -354,7 +340,10 @@ def get_course_tree(
                     title=topic.title,
                     description=topic.description,
                     order_index=topic.order_index,
-                    tasks=[_serialize_task(task) for task in tasks_by_topic_id.get(topic.id, [])],
+                    tasks=[
+                        _serialize_task(task)
+                        for task in tasks_by_topic_id.get(topic.id, [])
+                    ],
                 )
             )
 

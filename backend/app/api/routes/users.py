@@ -1,108 +1,113 @@
-from datetime import datetime, timedelta
-
-from fastapi import APIRouter, Depends, Header, status
-from fastapi.exceptions import HTTPException
-from jose import JWTError, jwt
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session, SQLModel, select
 
 from app.core.db import get_session
 from app.models.models import Role, User
 
+
 router = APIRouter(prefix="/users", tags=["users"])
-SECRET_KEY = "super-secret-key"
-ALGORITHM = "HS256"
 
 
-def create_token(username: str):
-    expire = datetime.utcnow() + timedelta(hours=24)
-    to_encode = {"sub": username, "exp": expire}
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+class UserCreate(SQLModel):
+    first_name: str
+    last_name: str | None = None
+    password_hash: str
+    role_id: int
+    mail: str
 
 
-def get_current_user_id(authorization: str = Header(...)):
-    # Ожидаем формат "Bearer <token>"
-    try:
-        token = authorization.split(" ")[1]
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return int(username)
-    except (JWTError, IndexError, ValueError):
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
+class UserPublic(SQLModel):
+    id: int
+    first_name: str
+    last_name: str | None = None
+    level: int
+    total_xp: int
+    role_id: int
+    mail: str
 
 
-@router.post("/register")
-def register_user(user: User, session: Session = Depends(get_session)):
-    stmt = select(User).where(
-        User.email == user.email or User.username == user.username
+class RolePublic(SQLModel):
+    id: int
+    name: str
+
+
+def serialize_user(user: User) -> UserPublic:
+    return UserPublic(
+        id=user.id,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        level=user.level,
+        total_xp=user.total_xp,
+        role_id=user.role_id,
+        mail=user.mail,
     )
-    db_user = session.exec(stmt).first()
-    if db_user:
+
+
+def serialize_role(role: Role) -> RolePublic:
+    return RolePublic(
+        id=role.id,
+        name=role.name,
+    )
+
+
+@router.post("/register", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+def register_user(
+    user_data: UserCreate,
+    session: Session = Depends(get_session),
+) -> UserPublic:
+    existing_user = session.exec(
+        select(User).where(User.mail == user_data.mail)
+    ).first()
+
+    if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with such email or user name already exists",
+            detail="User with this mail already exists",
         )
+
+    role = session.get(Role, user_data.role_id)
+    if role is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Role not found",
+        )
+
+    user = User(
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
+        password_hash=user_data.password_hash,
+        role_id=user_data.role_id,
+        mail=user_data.mail,
+    )
+
     session.add(user)
     session.commit()
     session.refresh(user)
-    profile = Profile(user_id=user.id)
-    session.add(profile)
-    session.commit()
+
+    return serialize_user(user)
 
 
-@router.get("/roles")
-def get_roles(session: Session = Depends(get_session)):
-    stmt = select(Role)
-    return session.exec(stmt).fetchall()
+@router.get("/roles", response_model=list[RolePublic])
+def get_roles(session: Session = Depends(get_session)) -> list[RolePublic]:
+    roles = session.exec(select(Role).order_by(Role.id)).all()
+    return [serialize_role(role) for role in roles]
 
 
-@router.get("/{id}")
-def get_user_by_id(user_id: int, session: Session = Depends(get_session)):
+@router.get("", response_model=list[UserPublic])
+def list_users(session: Session = Depends(get_session)) -> list[UserPublic]:
+    users = session.exec(select(User).order_by(User.id)).all()
+    return [serialize_user(user) for user in users]
+
+
+@router.get("/{user_id}", response_model=UserPublic)
+def get_user_by_id(
+    user_id: int,
+    session: Session = Depends(get_session),
+) -> UserPublic:
     user = session.get(User, user_id)
-    if not user:
+    if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
         )
-    return user
-
-
-@router.put("/{id}/profile")
-def update_user_profile(
-    user_id: int, profile: Profile, session: Session = Depends(get_session)
-):
-    stmt = select(Profile).where(Profile.user_id == user_id)
-    db_profile = session.exec(stmt).first()
-    if not db_profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User with such id not found"
-        )
-    update_data = profile.model_dump(exclude_unset=True)
-    db_profile.sqlmodel_update(update_data)
-    session.add(update_data)
-    session.commit()
-
-
-@router.get("/{id}/profile")
-def get_user_profile(user_id: int, session: Session = Depends(get_session)):
-    stmt = select(Profile).where(Profile.user_id == user_id)
-    profile = session.exec(stmt).first()
-    if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found"
-        )
-    return profile
-
-
-@router.get("/login")
-def login(userAuth: UserAuth, session: Session = Depends(get_session)):
-    stmt = select(User).where(User.username == userAuth.username)
-    user = session.exec(stmt).first()
-
-    if not user or user.password != userAuth.password:
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED, detail="Wrong password or username"
-        )
-
-    access_token = create_token(user.username)
-    return {"access_token": access_token}
+    return serialize_user(user)
