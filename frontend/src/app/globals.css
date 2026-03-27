@@ -3,6 +3,7 @@
   
   --font-montserrat: "Montserrat", sans-serif;
 
+
   --heading1: 67px;
   --heading2: 50px;
   --heading3: 40px;
@@ -10,7 +11,9 @@
   --heading5: 21px;
   
 }
-
+/* использовать любую перменную в roote надо с помощью var()
+ обращаешься по селектору к обьекту и в стиле прописывашь так: 
+ стиль: var(имя переменной из рута);*/
 * {
   box-sizing: border-box;
   margin: 0;

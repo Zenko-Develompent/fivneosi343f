@@ -1,4 +1,5 @@
 'use client'
+import Card from '@/components/coursesCards/courseCard'
 import styles from './registration.module.css';
 export default function RegistrationPage() {
   return (
@@ -27,6 +28,7 @@ export default function RegistrationPage() {
               <button>Создать аккаунт</button>
               <span>Уже есть аккаунт?</span> <a href="/login">Войти</a>
             </div>
+            
         </div>
       </div>
     </div>

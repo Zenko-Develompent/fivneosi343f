@@ -1,0 +1,64 @@
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px 20px;
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  gap: 0px;
+  max-width: 550px;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%; 
+  min-height: 350px;
+}
+
+/* Категория */
+.category {
+  font-size: calc(12px + 4 * (100vw - 320px) / 1600);
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  background: black;
+  display: inline-block;
+  padding: 6px 15px;
+  border-radius: 16px;
+  width: fit-content;
+}
+
+/* Заголовок */
+.title {
+  padding: 15px 0px;
+  font-size: calc(16px + 4 * (100vw - 320px) / 1600);
+  font-weight: 600;
+  color: textColor;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Описание */
+.description {
+  font-size: calc(12px + 4 * (100vw - 320px) / 1600);
+  font-weight: normal;
+  color: textColor;
+  line-height: 1.3;
+  margin: 0;
+  overflow: hidden;
+  flex: 1;
+  color: textColor;
+}
+
+/* Кнопка */
+.button {
+  color: textColor;
+  font-size: calc(16px + 4 * (100vw - 320px) / 1600);
+  font-weight: 500;
+  padding: 8px 0;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 16;
+  border: solid 1px black;
+}
