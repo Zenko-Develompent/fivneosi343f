@@ -1,6 +1,9 @@
 'use client'
+import { useRouter } from "next/navigation";
 import styles from './login.module.css';
 export default function LoginPage() {
+  const router = useRouter();
+
   return (
     <div>
       <div className={styles.main}>
@@ -17,7 +20,7 @@ export default function LoginPage() {
               <input id="login" type="email" placeholder='Введите почту'/>
               <label htmlFor="password">Пароль</label>
               <input id="password" type="password" placeholder='Введите пароль'/>
-              <button>Войти</button>
+              <button type="button" onClick={() => router.push("/dashboard")}>Войти</button>
               <span>Ещё нет аккаунта?</span> <a href="/registration">Создать</a>
             </div>
         </div>
