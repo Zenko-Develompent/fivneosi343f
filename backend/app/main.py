@@ -1,30 +1,29 @@
-from contextlib import asynccontextmanager
-
-import uvicorn
-from app.api.routes import courses, users
-from app.db import create_db_and_tables
 from fastapi import FastAPI
 
+from app.core.db import create_db_and_tables
+from app.models.achievements import Achievement
+from app.models.users import (
+    AchievementUser,
+    Module,
+    Role,
+    User,
+    UserAnswer,
+    UserCourse,
+)
+from app.models.courses import (
+    CourseCategory,
+    Course,
+    Module,
+    Topic,
+    Task,
+)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+app = FastAPI()
+
+@app.on_event("startup")
+def on_startup() -> None:
     create_db_and_tables()
-    print("База данных и таблицы созданы успешно")
-    yield
-    print("Приложение завершает работу")
 
-
-app = FastAPI(lifespan=lifespan)
-
-
-app.include_router(users)
-app.include_router(courses)
-
-
-@app.get("/hello")
-def hello():
-    return {"message": "hello"}
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=5555)
+@app.get("/")
+def root():
+    return {"status": "ok"}
