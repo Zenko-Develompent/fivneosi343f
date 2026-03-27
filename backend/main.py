@@ -1,14 +1,29 @@
-import colorama
+from contextlib import asynccontextmanager
+
 import uvicorn
+from app.api.routes import courses, users
+from app.db import create_db_and_tables
 from fastapi import FastAPI
 
-colorama.init()
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
+    print("База данных и таблицы созданы успешно")
+    yield
+    print("Приложение завершает работу")
 
 
-@app.get("/")
+app = FastAPI(lifespan=lifespan)
+
+
+app.include_router(users)
+app.include_router(courses)
+
+
+@app.get("/hello")
 def hello():
-    return {"messapge": "hello"}
+    return {"message": "hello"}
 
 
 if __name__ == "__main__":
