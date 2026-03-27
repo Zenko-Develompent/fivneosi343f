@@ -3,7 +3,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from app import models  # noqa: F401
 from app.core.config import settings
 
-engine = create_engine(settings.db_url, echo=False)
+engine = create_engine(settings.get_db_url(), echo=False)
 
 
 def create_db_and_tables() -> None:
