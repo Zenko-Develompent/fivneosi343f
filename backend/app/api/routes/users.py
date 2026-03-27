@@ -128,4 +128,3 @@ def get_roles(session: Session = Depends(get_session)):
 
     return roles
 
-
