@@ -35,6 +35,7 @@
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 .card_wrapper{
   display: flex;
@@ -63,8 +64,9 @@
 .my_card_wrapper{
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: flex-start;
   flex: 1;
-  gap: 50px;
+  gap: 24px;
+  flex-wrap: wrap;
   width: 100%;
 }

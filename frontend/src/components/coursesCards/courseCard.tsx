@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Button from "@/components/button/button";
 import ProgressBar from "@/components/progressBar/progressBar";
 import styles from "./courseCard.module.css";
@@ -11,6 +12,8 @@ interface CardProps {
   color?: CardColor;
   progress?: number;
   progressLabel?: string;
+  buttonTitle?: string;
+  buttonHref?: string;
   children?: React.ReactNode;
 }
 
@@ -21,6 +24,8 @@ export default function Card({
   color = "blue",
   progress,
   progressLabel,
+  buttonTitle = "Подробнее о курсе",
+  buttonHref,
   children,
 }: CardProps) {
   const isBlue = color === "blue";
@@ -43,14 +48,24 @@ export default function Card({
         />
       )}
 
-      <Button
-        title="Подробнее о курсе"
-        size="m"
-        variant="filled"
-        color={buttonColor}
-        fullWidth
-        className={styles.button}
-      />
+      {buttonHref ? (
+        <Link
+          href={buttonHref}
+          className={`${styles.buttonLink} ${isBlue ? styles.buttonLinkBlue : styles.buttonLinkOrange}`.trim()}
+        >
+          {buttonTitle}
+        </Link>
+      ) : (
+        <Button
+          title={buttonTitle}
+          size="m"
+          variant="filled"
+          color={buttonColor}
+          fullWidth
+          className={styles.button}
+        />
+      )}
+
       {children}
     </div>
   );

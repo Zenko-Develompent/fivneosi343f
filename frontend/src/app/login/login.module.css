@@ -1,14 +1,22 @@
 .main {
   display: flex;
+	flex-direction: column;
   align-items: center;
   width: 100%;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #c4dcff 0%, #ffffff 100%);
+}
+.titlelogo {
+	display: flex;
+	position: absolute;
+	font-style: normal;
+	font-weight: 700;
+	font-size: 48px;
+	color: #8555DB;
+	text-transform: uppercase;
+	margin: 50px;
 }
 
 .loginWindow {
   width: 100%;
-  min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
@@ -32,17 +40,66 @@
   border-radius: 16px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
   gap: 20px;
   width: 100%;
   max-width: 520px;
   padding: 40px 24px;
   justify-self: center;
   align-self: center;
+  transition: box-shadow 0.2s ease;
+	background-color: white;
+	box-shadow: 0px 27px 11px rgba(0, 0, 0, 0.01), 0px 15px 9px rgba(0, 0, 0, 0.05), 0px 7px 7px rgba(0, 0, 0, 0.09), 0px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.forms:hover {
+  box-shadow: var(--hover-shadow-elevated);
 }
 
 .title {
+  display: flex;
   font-size: var(--heading2);
-  margin-bottom: 50px;
+  justify-content: center;
+  align-items: center;
+}
+
+.hello {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 8px;
+	width: 100%;
+	text-align: left;
+	font-size: var(--heading5);
+	margin-bottom: 15px;
+	margin-top: 50px;
+}
+
+.helloIcon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.registerText {
+	display: flex;
+	justify-content: center;
+  align-items: center;
+	font-weight: 600;
+}
+
+.registerLink {
+	margin-left: 5px;
+	color: var(--color-logo-default);
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.registerLink:hover {
+	color: var(--color-logo-hoover);
+	text-decoration: underline;
+}
+
+.registerLink:active {
+	color: var(--color-logo-active);
+	font-weight: 700;
 }

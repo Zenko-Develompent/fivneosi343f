@@ -1,0 +1,85 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(81, 197, 243, 0.35);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at right top, rgba(247, 118, 3, 0.13), transparent 38%),
+    linear-gradient(145deg, #ffffff 0%, #f3fbff 100%);
+}
+
+.progress {
+  margin: 0;
+  color: var(--text-color1);
+  font-size: clamp(14px, 1.6vw, 18px);
+  font-weight: 700;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(81, 197, 243, 0.2);
+  border: 1px solid rgba(81, 197, 243, 0.55);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.card {
+  min-height: 90px;
+  border: 1px solid rgba(47, 165, 216, 0.4);
+  border-radius: 16px;
+  padding: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef8ff 100%);
+  color: transparent;
+  font-size: clamp(13px, 1.45vw, 16px);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--hover-shadow-elevated);
+  border-color: var(--state-blue-default);
+}
+
+.card:disabled {
+  cursor: default;
+}
+
+.cardOpen {
+  color: var(--text-color1);
+  border-color: var(--state-blue-default);
+  background:
+    radial-gradient(circle at 10% 15%, rgba(247, 118, 3, 0.12), transparent 46%),
+    linear-gradient(180deg, #ffffff 0%, #e9f7ff 100%);
+}
+
+.success {
+  margin: 0;
+  color: #6e2f00;
+  font-size: clamp(15px, 1.7vw, 20px);
+  font-weight: 700;
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(247, 118, 3, 0.45);
+  background: rgba(247, 118, 3, 0.16);
+}
+
+@media (max-width: 760px) {
+  .wrapper {
+    padding: 12px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}

@@ -162,18 +162,3 @@
   border-color: #f0c6c6;
   background: #fff9f9;
 }
-
-@media (max-width: 640px) {
-  .container {
-    border-radius: 12px;
-    padding: 14px;
-  }
-
-  .runButton {
-    width: 100%;
-  }
-
-  .stopButton {
-    width: 100%;
-  }
-}

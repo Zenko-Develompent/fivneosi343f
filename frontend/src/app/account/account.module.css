@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  background-color: #ffffff;
+  background: transparent;
 }
 
 .content {
@@ -29,12 +29,34 @@
 .profileTopRow {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 18px;
-  flex-wrap: wrap;
+}
+
+.fullName {
+  color: #1e1b23;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
 }
 
 .levelBadge {
-  margin-right: 4px;
+  margin-left: 0;
+}
+
+.balanceRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.balanceLabel {
+  color: #1e1b23;
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 700;
+  line-height: 1;
+  margin: 0;
 }
 
 .coinsRow {
@@ -62,17 +84,6 @@
   max-width: 560px;
   --progress-track-height: 8px;
   gap: 4px;
-}
-
-.credentials {
-  color: #1e1b23;
-  font-size: 23px;
-  font-weight: 400;
-  line-height: 1.25;
-}
-
-.credentialsLabel {
-  font-weight: 700;
 }
 
 .section {
@@ -103,6 +114,25 @@
   align-items: stretch;
 }
 
+.allAchievementsTitle {
+  color: #19171d;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.allAchievementsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.grayscaleAchievement {
+  filter: grayscale(100%);
+}
+
 .bottomActions {
   display: flex;
   justify-content: flex-end;
@@ -123,8 +153,8 @@
     gap: 32px;
   }
 
-  .credentials {
-    font-size: 20px;
+  .allAchievementsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .logoutButton {
@@ -139,7 +169,8 @@
 
 @media (max-width: 760px) {
   .achievementsGrid,
-  .coursesGrid {
+  .coursesGrid,
+  .allAchievementsGrid {
     grid-template-columns: 1fr;
   }
 

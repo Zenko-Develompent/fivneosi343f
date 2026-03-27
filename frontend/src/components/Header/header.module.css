@@ -10,7 +10,7 @@
   z-index: 100;
   height: 60px;
   background-color: white;
-	border-bottom: 1px solid #e6e6e6;
+  border-bottom: 1px solid #e6e6e6;
 }
 
 .logo {
@@ -23,7 +23,7 @@
   color: black;
   text-decoration: none;
   transition: color 0.3s ease, transform 0.3s ease;
-	text-transform: uppercase;
+  text-transform: uppercase;
 }
 
 .logo:hover {
@@ -99,14 +99,25 @@
   transform: translateY(0);
 }
 
+.profileWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .profile {
   display: flex;
   align-items: center;
   cursor: pointer;
   transition: transform 0.3s ease;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .profile img {
+  width: 32px;
+  height: 32px;
   transition: transform 0.3s ease, filter 0.3s ease;
 }
 
@@ -119,7 +130,93 @@
   transform: translateY(0) scale(0.98);
 }
 
-.icon {
-  width: 32px;
-  height: 32px;
+.cabinetPopup {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(80vw, 240px);
+  background: #ffffff;
+  border: 2px solid #26181a;
+  border-radius: 14px;
+  padding: 10px 10px 8px;
+  box-shadow: var(--hover-shadow-elevated);
+  z-index: 200;
+}
+
+.popupCoins {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #1a171d;
+  font-size: clamp(17px, 2vw, 22px);
+  font-weight: 700;
+  line-height: 1;
+  margin: 0;
+}
+
+.popupCoins img {
+  width: 18px;
+  height: 14px;
+  display: block;
+}
+
+.popupDivider {
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: #26181a;
+  margin: 7px 0 8px;
+}
+
+.popupNick {
+  color: #1a171d;
+  font-size: clamp(14px, 1.7vw, 18px);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.popupEmail {
+  color: #1a171d;
+  font-size: clamp(14px, 1.7vw, 18px);
+  font-weight: 600;
+  line-height: 1.1;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin: 4px 0 0;
+}
+
+.popupTitle {
+  color: #1a171d;
+  font-size: clamp(17px, 2vw, 22px);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 6px 0 0;
+}
+
+.popupButton {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 34px;
+  background: var(--state-blue-default);
+  color: #1a171d;
+  text-decoration: none;
+  border-radius: 999px;
+  font-size: clamp(13px, 1.4vw, 16px);
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.popupButton:hover {
+  background: var(--state-blue-hoover);
+  box-shadow: var(--hover-shadow-elevated);
+  transform: translateY(-1px);
+}
+
+.popupButton:active {
+  background: var(--state-blue-active);
+  transform: translateY(0);
 }

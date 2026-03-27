@@ -1,0 +1,126 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid rgba(81, 197, 243, 0.35);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at left top, rgba(81, 197, 243, 0.16), transparent 40%),
+    linear-gradient(155deg, #ffffff 0%, #f8fcff 100%);
+}
+
+.questionCard {
+  border: 1px solid rgba(81, 197, 243, 0.45);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 95% 8%, rgba(247, 118, 3, 0.12), transparent 35%),
+    #ffffff;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.questionCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--hover-shadow-elevated);
+}
+
+.questionTitle {
+  margin: 0;
+  font-size: clamp(13px, 1.4vw, 16px);
+  font-weight: 700;
+  color: var(--text-color1);
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(247, 118, 3, 0.48);
+  background: rgba(247, 118, 3, 0.18);
+}
+
+.questionPrompt {
+  margin: 0;
+  font-size: clamp(16px, 1.95vw, 22px);
+  font-weight: 600;
+  color: var(--text-color1);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: clamp(14px, 1.55vw, 18px);
+  color: var(--text-color1);
+  border: 1px solid rgba(81, 197, 243, 0.35);
+  border-radius: 12px;
+  background: rgba(81, 197, 243, 0.07);
+  padding: 9px 10px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.option:hover {
+  border-color: var(--state-blue-default);
+  background: rgba(81, 197, 243, 0.14);
+  transform: translateX(2px);
+}
+
+.option input {
+  margin-top: 3px;
+  accent-color: var(--state-blue-active);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 10px;
+  border: 1px solid rgba(170, 130, 242, 0.5);
+  background: rgba(170, 130, 242, 0.14);
+}
+
+.feedbackImage {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.feedbackText {
+  margin: 0;
+  font-size: clamp(14px, 1.6vw, 18px);
+  font-weight: 700;
+  color: var(--text-color1);
+}
+
+.summary {
+  margin: 0;
+  font-size: clamp(15px, 1.75vw, 20px);
+  font-weight: 700;
+  color: #6e2f00;
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(247, 118, 3, 0.45);
+  background: rgba(247, 118, 3, 0.16);
+}
+
+@media (max-width: 760px) {
+  .wrapper {
+    padding: 12px;
+  }
+}

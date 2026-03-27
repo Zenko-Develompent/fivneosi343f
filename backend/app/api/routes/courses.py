@@ -3,34 +3,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, SQLModel, select
 
 from app.core.db import get_session
-from app.core.security import get_current_user_id
 from app.models.models import Course, CourseCategory, UserCourse
 from fastapi import Depends, HTTPException, Request
 from jose import JWTError
 
-from app.core.security import decode_access_token
+from fastapi import APIRouter, Depends
+from sqlmodel import Session, SQLModel, select
 
-def get_current_user_id_optional(request: Request) -> int | None:
-    auth_header = request.headers.get("Authorization")
-
-    if not auth_header:
-        return None
-
-    try:
-        scheme, token = auth_header.split()
-        if scheme.lower() != "bearer":
-            return None
-
-        payload = decode_access_token(token)
-        user_id = payload.get("sub")
-
-        if user_id is None:
-            return None
-
-        return int(user_id)
-    except (ValueError, JWTError):
-        return None
-
+from app.core.db import get_session
+from app.models.models import Course, UserCourse
+from app.core.security import get_current_user_id
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
@@ -69,15 +51,6 @@ class HomeCoursesResponse(SQLModel):
 
 
 
-from fastapi import APIRouter, Depends
-from sqlmodel import Session, SQLModel, select
-
-from app.core.db import get_session
-from app.core.security import get_current_user_id_optional
-from app.models.models import Course, UserCourse
-
-
-router = APIRouter(prefix="/courses", tags=["courses"])
 
 class CategoryPublic(SQLModel):
     id: int
@@ -213,5 +186,4 @@ def get_course_by_id(
             title=course.category.title,
         ) if course.category else None,
     )
-
 

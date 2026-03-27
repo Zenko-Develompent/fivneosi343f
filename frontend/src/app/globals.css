@@ -37,6 +37,9 @@
   --state-orange-hoover: #E66C00;
   --state-orange-active: #C75E00;
   --state-orange-disabled: #FFA85A;
+
+  --background-gradient: url("../shared/assets/images/backgroundgradient.png");
+  --hover-shadow-elevated: 0px 59px 23px rgba(74, 74, 74, 0.01), 0px 33px 20px rgba(74, 74, 74, 0.05), 0px 15px 15px rgba(74, 74, 74, 0.09), 0px 4px 8px rgba(74, 74, 74, 0.1);
   
 }
 /* использовать любую перменную в roote надо с помощью var()
@@ -51,6 +54,14 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background-image: var(--background-gradient);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 [id] {

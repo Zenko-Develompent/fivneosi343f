@@ -14,13 +14,20 @@ interface SidebarTheme {
   lessons: SidebarLesson[];
 }
 
+interface SidebarModule {
+  moduleId: string;
+  title: string;
+  themes: SidebarTheme[];
+}
+
 interface SidebarProps {
   totalSteps: number;
   completedSteps: number;
   isOpen: boolean;
   onToggle: () => void;
   courseTitle?: string;
-  themes: SidebarTheme[];
+  modules: SidebarModule[];
+  activeModuleId?: string;
   activeThemeId?: string;
   activeLessonId?: string;
   onThemeSelect: (themeId: string) => void;
@@ -33,7 +40,8 @@ export default function Sidebar({
   isOpen,
   onToggle,
   courseTitle = "Название курса",
-  themes,
+  modules,
+  activeModuleId,
   activeThemeId,
   activeLessonId,
   onThemeSelect,
@@ -67,36 +75,50 @@ export default function Sidebar({
           <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
         </div>
 
-        <h3 className={`${styles.title3} ${styles.modulesTitle}`}>Модули</h3>
+        <h3 className={`${styles.title3} ${styles.modulesTitle}`}>Содержание</h3>
 
         <div className={styles.module}>
-          <ul className={styles.themeList}>
-            {themes.map((theme) => {
-              const isThemeActive = theme.themeId === activeThemeId;
+          <ul className={styles.moduleList}>
+            {modules.map((module) => {
+              const isModuleActive = module.moduleId === activeModuleId;
 
               return (
-                <li className={styles.themeItem} key={theme.themeId}>
-                  <button
-                    type="button"
-                    className={`${styles.themeButton} ${isThemeActive ? styles.themeButtonActive : ""}`.trim()}
-                    onClick={() => onThemeSelect(theme.themeId)}
-                  >
-                    {theme.title}
-                  </button>
-                  <ul className={styles.lessonList}>
-                    {theme.lessons.map((lesson) => {
-                      const isLessonActive =
-                        theme.themeId === activeThemeId && lesson.lessonId === activeLessonId;
+                <li className={styles.moduleItem} key={module.moduleId}>
+                  <p className={`${styles.moduleTitle} ${isModuleActive ? styles.moduleTitleActive : ""}`.trim()}>
+                    {module.title}
+                  </p>
+
+                  <ul className={styles.themeList}>
+                    {module.themes.map((theme) => {
+                      const isThemeActive = theme.themeId === activeThemeId;
 
                       return (
-                        <li key={`${theme.themeId}-${lesson.lessonId}`}>
+                        <li className={styles.themeItem} key={theme.themeId}>
                           <button
                             type="button"
-                            className={`${styles.lessonButton} ${isLessonActive ? styles.lessonButtonActive : ""}`.trim()}
-                            onClick={() => onLessonSelect(theme.themeId, lesson.lessonId)}
+                            className={`${styles.themeButton} ${isThemeActive ? styles.themeButtonActive : ""}`.trim()}
+                            onClick={() => onThemeSelect(theme.themeId)}
                           >
-                            {lesson.title}
+                            {theme.title}
                           </button>
+                          <ul className={styles.lessonList}>
+                            {theme.lessons.map((lesson) => {
+                              const isLessonActive =
+                                theme.themeId === activeThemeId && lesson.lessonId === activeLessonId;
+
+                              return (
+                                <li key={`${theme.themeId}-${lesson.lessonId}`}>
+                                  <button
+                                    type="button"
+                                    className={`${styles.lessonButton} ${isLessonActive ? styles.lessonButtonActive : ""}`.trim()}
+                                    onClick={() => onLessonSelect(theme.themeId, lesson.lessonId)}
+                                  >
+                                    {lesson.title}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
                         </li>
                       );
                     })}

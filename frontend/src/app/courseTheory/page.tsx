@@ -4,121 +4,43 @@ import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/header/header";
 import Sidebar from "@/components/sidebar/sidebar";
 import Button from "@/components/button/button";
-import SingleChoice from "@/components/singleChoice/singleChoice";
 import PythonCompiler, {
   preloadPythonCompilerAssets,
 } from "@/components/pythonCompiler/pythonCompiler";
-import { LOCAL_COURSE_THEORY_PAYLOAD } from "./mockCourseData";
-import type { CourseItemDTO, CourseLessonItemDTO, QuizQuestionDTO } from "./types";
+import GuessCodeGame from "@/components/games/guessCode/guessCode";
+import FixCodeGame from "@/components/games/fixCode/fixCode";
+import MemoryMatchGame from "@/components/games/memoryMatch/memoryMatch";
+import { COURSE_THEORY_PAYLOADS } from "./mockCourseData";
+import type { CourseItemDTO, CourseLessonItemDTO, CourseTheoryPayloadDTO } from "./types";
 import styles from "./course.module.css";
-
-type QuestionResultStatus = "correct" | "incorrect" | "unanswered";
-
-interface LessonCheckResult {
-  score: number;
-  total: number;
-  questionStatusById: Record<string, QuestionResultStatus>;
-}
 
 function getCourseItemKey(item: CourseItemDTO): string {
   if (item.type === "theme") {
-    return `${item.themeId}-theme`;
+    return `${item.moduleId}-${item.themeId}-theme`;
   }
 
-  return `${item.themeId}-${item.lessonId}`;
+  if (item.type === "lesson") {
+    return `${item.moduleId}-${item.themeId}-${item.lessonId}`;
+  }
+
+  return `${item.moduleId}-${item.themeId}-${item.gameId}`;
 }
 
-function evaluateQuestionAnswer(
-  question: QuizQuestionDTO,
-  selectedOptionId: string | undefined
-): QuestionResultStatus {
-  if (!selectedOptionId) {
-    return "unanswered";
-  }
-
-  if (!question.correctOptionId) {
-    return "unanswered";
-  }
-
-  return question.correctOptionId === selectedOptionId ? "correct" : "incorrect";
-}
-
-function buildLessonCheckResult(
-  questions: QuizQuestionDTO[],
-  answersByQuestion: Record<string, string>
-): LessonCheckResult {
-  const questionStatusById: Record<string, QuestionResultStatus> = {};
-  let score = 0;
-
-  for (const question of questions) {
-    const status = evaluateQuestionAnswer(question, answersByQuestion[question.id]);
-    questionStatusById[question.id] = status;
-
-    if (status === "correct") {
-      score += 1;
-    }
-  }
-
-  return {
-    score,
-    total: questions.length,
-    questionStatusById,
-  };
-}
-
-function getCorrectAnswerText(question: QuizQuestionDTO): string {
-  if (!question.correctOptionId) {
-    return "проверяется на сервере";
-  }
-
-  const correctOption = question.options.find(
-    (option) => option.id === question.correctOptionId
-  );
-  return correctOption?.label ?? "ответ не задан";
+function getFallbackCourse(): CourseTheoryPayloadDTO | undefined {
+  return COURSE_THEORY_PAYLOADS[0];
 }
 
 export default function CourseTheoryPage() {
-  const coursePayload = LOCAL_COURSE_THEORY_PAYLOAD;
+  const [selectedCourseId, setSelectedCourseId] = useState(getFallbackCourse()?.courseId ?? "");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [lessonAnswers, setLessonAnswers] = useState<Record<string, Record<string, string>>>({});
-  const [lessonCheckResults, setLessonCheckResults] = useState<
-    Record<string, LessonCheckResult>
-  >({});
 
-  const courseFlow = coursePayload.flow;
-  const totalFlowSteps = courseFlow.length;
-  const currentStep = currentIndex + 1;
-  const isLastStep = currentIndex === courseFlow.length - 1;
+  const coursePayload = useMemo(() => {
+    const found = COURSE_THEORY_PAYLOADS.find((course) => course.courseId === selectedCourseId);
+    return found ?? getFallbackCourse();
+  }, [selectedCourseId]);
 
-  const currentItem = useMemo(() => courseFlow[currentIndex], [courseFlow, currentIndex]);
-  const currentThemeItems = useMemo(
-    () => courseFlow.filter((item) => item.themeId === currentItem.themeId),
-    [courseFlow, currentItem]
-  );
-
-  const currentThemeStep = useMemo(() => {
-    const currentKey = getCourseItemKey(currentItem);
-    const idx = currentThemeItems.findIndex((item) => getCourseItemKey(item) === currentKey);
-    return idx === -1 ? 1 : idx + 1;
-  }, [currentItem, currentThemeItems]);
-
-  const currentLesson: CourseLessonItemDTO | null =
-    currentItem.type === "lesson" ? currentItem : null;
-  const currentLessonKey = currentLesson
-    ? `${currentLesson.themeId}:${currentLesson.lessonId}`
-    : null;
-  const currentQuizQuestions = currentLesson?.quizQuestions ?? [];
-  const hasQuizQuestions = currentQuizQuestions.length > 0;
-  const shouldShowCompiler = Boolean(currentLesson && currentLesson.showCompiler !== false);
-  const currentLessonAnswers = currentLessonKey ? lessonAnswers[currentLessonKey] ?? {} : {};
-  const currentLessonCheckResult = currentLessonKey
-    ? lessonCheckResults[currentLessonKey]
-    : undefined;
-
-  const activeThemeId = currentItem.themeId;
-  const activeLessonId = currentItem.type === "lesson" ? currentItem.lessonId : undefined;
-  const currentContent = currentItem.contentMd ?? currentItem.text;
+  const courseFlow = coursePayload?.flow ?? [];
 
   useEffect(() => {
     const warmup = () => {
@@ -134,58 +56,71 @@ export default function CourseTheoryPage() {
     return () => clearTimeout(timeoutId);
   }, []);
 
-  const handleThemeSelect = (themeId: string) => {
-    const index = courseFlow.findIndex(
-      (item) => item.type === "theme" && item.themeId === themeId
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [selectedCourseId]);
+
+  if (!coursePayload || courseFlow.length === 0) {
+    return (
+      <div>
+        <Header />
+        <main className={styles.emptyState}>Курс пока не заполнен.</main>
+      </div>
     );
-    if (index !== -1) setCurrentIndex(index);
+  }
+
+  const safeIndex = Math.min(currentIndex, Math.max(courseFlow.length - 1, 0));
+  const totalFlowSteps = courseFlow.length;
+  const currentStep = safeIndex + 1;
+  const isLastStep = safeIndex === courseFlow.length - 1;
+
+  const currentItem = courseFlow[safeIndex];
+  const currentThemeItems = courseFlow.filter((item) => item.themeId === currentItem.themeId);
+  const currentThemeStep = Math.max(
+    currentThemeItems.findIndex((item) => getCourseItemKey(item) === getCourseItemKey(currentItem)) + 1,
+    1
+  );
+
+  const currentLesson: CourseLessonItemDTO | null = currentItem.type === "lesson" ? currentItem : null;
+  const currentGame = currentItem.type === "game" ? currentItem : null;
+  const shouldShowCompiler = Boolean(currentLesson && currentLesson.showCompiler !== false);
+
+  const activeModuleId = currentItem.moduleId;
+  const activeThemeId = currentItem.themeId;
+  const activeLessonId =
+    currentItem.type === "lesson"
+      ? currentItem.lessonId
+      : currentItem.type === "game"
+        ? currentItem.lessonId
+        : undefined;
+
+  const currentContent =
+    currentItem.type === "game"
+      ? currentItem.description
+      : (currentItem.contentMd ?? currentItem.text);
+
+  const handleThemeSelect = (themeId: string) => {
+    const index = courseFlow.findIndex((item) => item.type === "theme" && item.themeId === themeId);
+    if (index !== -1) {
+      setCurrentIndex(index);
+    }
   };
 
   const handleLessonSelect = (themeId: string, lessonId: string) => {
     const index = courseFlow.findIndex(
-      (item) =>
-        item.type === "lesson" &&
-        item.themeId === themeId &&
-        item.lessonId === lessonId
+      (item) => item.type === "lesson" && item.themeId === themeId && item.lessonId === lessonId
     );
-    if (index !== -1) setCurrentIndex(index);
-  };
-
-  const handleQuestionAnswerChange = (questionId: string, selectedOptionId: string) => {
-    if (!currentLessonKey) return;
-
-    setLessonAnswers((prev) => ({
-      ...prev,
-      [currentLessonKey]: {
-        ...(prev[currentLessonKey] ?? {}),
-        [questionId]: selectedOptionId,
-      },
-    }));
-
-    setLessonCheckResults((prev) => {
-      if (!(currentLessonKey in prev)) {
-        return prev;
-      }
-
-      const next = { ...prev };
-      delete next[currentLessonKey];
-      return next;
-    });
-  };
-
-  const handleCheckAnswers = () => {
-    if (!currentLessonKey || !hasQuizQuestions) return;
-
-    const result = buildLessonCheckResult(currentQuizQuestions, currentLessonAnswers);
-    setLessonCheckResults((prev) => ({
-      ...prev,
-      [currentLessonKey]: result,
-    }));
+    if (index !== -1) {
+      setCurrentIndex(index);
+    }
   };
 
   const handleNext = () => {
-    if (isLastStep) return;
-    setCurrentIndex((prev) => prev + 1);
+    if (isLastStep) {
+      return;
+    }
+
+    setCurrentIndex((prev) => Math.min(prev + 1, courseFlow.length - 1));
   };
 
   return (
@@ -198,14 +133,19 @@ export default function CourseTheoryPage() {
           isOpen={isSidebarOpen}
           onToggle={() => setIsSidebarOpen((prev) => !prev)}
           courseTitle={coursePayload.courseTitle}
-          themes={coursePayload.themes.map((theme) => ({
-            themeId: theme.themeId,
-            title: theme.title,
-            lessons: theme.lessons.map((lesson) => ({
-              lessonId: lesson.lessonId,
-              title: lesson.title,
+          modules={coursePayload.modules.map((module) => ({
+            moduleId: module.moduleId,
+            title: module.title,
+            themes: module.themes.map((theme) => ({
+              themeId: theme.themeId,
+              title: theme.title,
+              lessons: theme.lessons.map((lesson) => ({
+                lessonId: lesson.lessonId,
+                title: lesson.title,
+              })),
             })),
           }))}
+          activeModuleId={activeModuleId}
           activeThemeId={activeThemeId}
           activeLessonId={activeLessonId}
           onThemeSelect={handleThemeSelect}
@@ -213,6 +153,22 @@ export default function CourseTheoryPage() {
         />
 
         <main className={styles.content}>
+          <div className={styles.courseSwitch}>
+            {COURSE_THEORY_PAYLOADS.map((course) => (
+              <Button
+                key={course.courseId}
+                title={course.courseTitle}
+                size="s"
+                variant={selectedCourseId === course.courseId ? "filled" : "outline"}
+                color={selectedCourseId === course.courseId ? "logo" : "blue"}
+                className={styles.courseSwitchButton}
+                onClick={() => setSelectedCourseId(course.courseId)}
+              />
+            ))}
+          </div>
+
+          {coursePayload.audience && <p className={styles.audienceText}>Аудитория: {coursePayload.audience}</p>}
+
           <div className={styles.stepBanner}>
             <div className={styles.stepBannerTop}>
               Шаг {currentThemeStep} из {currentThemeItems.length}
@@ -224,7 +180,7 @@ export default function CourseTheoryPage() {
                     key={getCourseItemKey(item)}
                     className={`${styles.stepSegment} ${
                       index + 1 === currentThemeStep ? styles.stepSegmentActive : ""
-                    }`}
+                    }`.trim()}
                   />
                 ))}
               </div>
@@ -232,103 +188,43 @@ export default function CourseTheoryPage() {
           </div>
 
           <h1 className={styles.contentTitle}>{currentItem.title}</h1>
-          <p className={styles.contentText}>{currentContent}</p>
+          {currentContent && <p className={styles.contentText}>{currentContent}</p>}
 
           {currentLesson && (
             <div className={styles.practiceStack}>
               {shouldShowCompiler && (
                 <div className={styles.compilerBlock}>
                   <PythonCompiler
-                    key={`compiler-${currentLessonKey}`}
+                    key={`compiler-${currentLesson.moduleId}-${currentLesson.themeId}-${currentLesson.lessonId}`}
                     title="Практика в Python"
-                    initialCode={currentLesson.compilerInitialCode ?? ""}
+                    initialCode=""
                   />
                 </div>
               )}
-
-              {hasQuizQuestions && (
-                <section className={styles.quizBlock}>
-                  <h2 className={styles.quizTitle}>Проверка по уроку</h2>
-
-                  <div className={styles.questionsList}>
-                    {currentQuizQuestions.map((question, index) => {
-                      const selectedOptionId = currentLessonAnswers[question.id];
-                      const status = currentLessonCheckResult?.questionStatusById[question.id];
-                      const statusClass =
-                        status === "correct"
-                          ? styles.questionStatusCorrect
-                          : status === "incorrect"
-                            ? styles.questionStatusIncorrect
-                            : styles.questionStatusUnanswered;
-
-                      return (
-                        <article key={question.id} className={styles.questionCard}>
-                          <div className={styles.questionMeta}>
-                            <span className={styles.questionNumber}>Вопрос {index + 1}</span>
-                            <span className={styles.questionType}>Один вариант</span>
-                          </div>
-
-                          <SingleChoice
-                            name={`single-${currentLessonKey}-${question.id}`}
-                            question={question.prompt}
-                            options={question.options.map((option) => ({
-                              value: option.id,
-                              label: option.label,
-                              description: option.description,
-                              disabled: option.disabled,
-                            }))}
-                            value={selectedOptionId}
-                            onChange={(value) =>
-                              handleQuestionAnswerChange(question.id, value)
-                            }
-                          />
-
-                          {status && (
-                            <p className={`${styles.questionStatus} ${statusClass}`}>
-                              {status === "correct" && "Верно"}
-                              {status === "incorrect" && "Неверно"}
-                              {status === "unanswered" && "Нет ответа"}
-                            </p>
-                          )}
-
-                          {status === "incorrect" && (
-                            <p className={styles.correctAnswers}>
-                              Правильный ответ: {getCorrectAnswerText(question)}
-                            </p>
-                          )}
-
-                          {status && question.explanation && (
-                            <p className={styles.questionExplanation}>{question.explanation}</p>
-                          )}
-                        </article>
-                      );
-                    })}
-                  </div>
-
-                  <div className={styles.quizActions}>
-                    <Button
-                      size="s"
-                      variant="outline"
-                      title="Проверить ответы"
-                      onClick={handleCheckAnswers}
-                    />
-
-                    {currentLessonCheckResult && (
-                      <p className={styles.quizSummary}>
-                        Результат: {currentLessonCheckResult.score} из{" "}
-                        {currentLessonCheckResult.total}
-                      </p>
-                    )}
-                  </div>
-                </section>
-              )}
             </div>
+          )}
+
+          {currentGame && (
+            <section className={styles.gameBlock}>
+              {currentGame.gameType === "memoryMatch" && currentGame.memoryPairs && (
+                <MemoryMatchGame pairs={currentGame.memoryPairs} />
+              )}
+
+              {currentGame.gameType === "guessCode" && currentGame.guessCodeQuestions && (
+                <GuessCodeGame questions={currentGame.guessCodeQuestions} />
+              )}
+
+              {currentGame.gameType === "fixCode" && currentGame.fixCodeTasks && (
+                <FixCodeGame tasks={currentGame.fixCodeTasks} />
+              )}
+            </section>
           )}
 
           <div className={styles.nextButton}>
             <Button
               size="m"
               variant="filled"
+              color="logo"
               fullWidth
               title={isLastStep ? "В каталог" : "Дальше"}
               onClick={handleNext}

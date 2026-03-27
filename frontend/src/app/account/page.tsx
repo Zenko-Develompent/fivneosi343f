@@ -98,13 +98,18 @@ export default function AccountPage() {
       <main className={styles.content}>
         <section className={styles.profileSection}>
           <h1 className={styles.pageTitle}>Личный кабинет</h1>
-					<div className={styles.profileTopRow}>
-						<p className={styles.coinsRow}>
-							<span className={styles.coinsAmount}>{coins}</span>
-							<img className={styles.coinIcon} src={CoinIcon.src} alt="" aria-hidden="true" />
-						</p>
-          
+
+          <div className={styles.profileTopRow}>
+            <p className={styles.fullName}>Имя Фамилия</p>
             <LevelBadge level={level} tone="orange" className={styles.levelBadge} />
+          </div>
+
+          <div className={styles.balanceRow}>
+            <p className={styles.balanceLabel}>Баланс:</p>
+            <p className={styles.coinsRow}>
+              <span className={styles.coinsAmount}>{coins}</span>
+              <img className={styles.coinIcon} src={CoinIcon.src} alt="" aria-hidden="true" />
+            </p>
           </div>
 
           <ProgressBar
@@ -114,15 +119,6 @@ export default function AccountPage() {
             showValue={false}
             className={styles.coinsProgress}
           />
-
-          <div className={styles.credentials}>
-            <p>
-              <span className={styles.credentialsLabel}>Логин:</span> fwejhefijwen
-            </p>
-            <p>
-              <span className={styles.credentialsLabel}>Пароль:</span> fwejhefijwen
-            </p>
-          </div>
         </section>
 
         <section className={styles.section} id="allCourses">
@@ -154,6 +150,23 @@ export default function AccountPage() {
                 color={course.color}
                 progress={course.progress}
                 progressLabel="Прогресс курса"
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <h2 className={styles.allAchievementsTitle}>Все достижения</h2>
+
+          <div className={styles.allAchievementsGrid}>
+            {achievements.map((achievement) => (
+              <AchievementCard
+                key={`all-${achievement.id}`}
+                title={achievement.title}
+                image={achievement.image}
+                alt={achievement.alt}
+                level={achievement.level}
+                className={styles.grayscaleAchievement}
               />
             ))}
           </div>

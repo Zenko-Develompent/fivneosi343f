@@ -99,14 +99,14 @@
 	margin-top: 8px;
   width: 100%;
   height: 12px;
-  background-color: #e7edf4;
+  background-color: var(--state-blue-disabled);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .progressFill {
   height: 100%;
-  background: blue;
+  background: var(--state-blue-default);
   border-radius: 999px;
   transition: width 0.3s ease;
 }
@@ -120,30 +120,58 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.themeList {
+.moduleList {
   margin: 0;
   padding: 0;
 }
 
+.moduleItem {
+  list-style: none;
+  padding: 0 0 18px;
+}
+
+.moduleTitle {
+  color: #1f1a2b;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 8px;
+}
+
+.moduleTitleActive {
+  color: var(--color-logo-active);
+}
+
+.themeList {
+  margin: 0;
+  padding: 0 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .themeItem {
   list-style: none;
+  margin: 0;
 }
 
 .themeButton {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 600;
   text-align: left;
   padding: 0;
+  transition: color 0.2s ease;
 }
 
 .themeButtonActive {
-  color: #1555d6;
+  color: var(--color-logo-active);
 }
 
 .lessonList {
+  margin: 4px 0 0;
   padding: 0 0 0 20px;
 }
 
@@ -155,13 +183,18 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   text-align: left;
-  padding: 6px 0;
+  padding: 4px 0;
+  transition: color 0.2s ease;
+}
+
+.lessonButton:hover {
+  color: var(--color-logo-hoover);
 }
 
 .lessonButtonActive {
-  color: #1555d6;
+  color: var(--color-logo-hoover);
   font-weight: 700;
 }

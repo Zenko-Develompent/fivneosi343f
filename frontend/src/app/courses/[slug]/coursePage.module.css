@@ -1,0 +1,141 @@
+.page {
+  padding-top: 60px;
+  min-height: 100vh;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  border-radius: 0 0 24px 24px;
+  padding: 18px 20px 10px;
+  border: 1px solid #d3d3d3;
+}
+
+.heroBlue {
+  background: rgba(81, 197, 243, 0.24);
+}
+
+.heroOrange {
+  background: rgba(247, 118, 3, 0.28);
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.categoryPill {
+  width: fit-content;
+  min-width: 130px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 1px solid #2e2e2e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(28px, 3.1vw, 42px);
+  line-height: 1.15;
+  color: #1c1523;
+}
+
+.heroCtaWrap {
+  margin-top: 4px;
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #1c1523;
+  font-size: clamp(15px, 1.6vw, 20px);
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ctaBlue {
+  background: var(--state-blue-default);
+}
+
+.ctaBlue:hover {
+  background: var(--state-blue-hoover);
+  transform: translateY(-1px);
+  box-shadow: var(--hover-shadow-elevated);
+}
+
+.ctaOrange {
+  background: var(--state-orange-default);
+}
+
+.ctaOrange:hover {
+  background: var(--state-orange-hoover);
+  transform: translateY(-1px);
+  box-shadow: var(--hover-shadow-elevated);
+}
+
+.heroImage {
+  width: clamp(120px, 18vw, 220px);
+  height: auto;
+  object-fit: contain;
+}
+
+.content {
+  padding: 26px 20px 40px;
+  max-width: 1400px;
+}
+
+.section {
+  margin-bottom: 26px;
+}
+
+.sectionTitle {
+  margin: 0 0 8px;
+  font-size: clamp(30px, 3vw, 40px);
+  line-height: 1.15;
+  color: #1c1523;
+}
+
+.paragraph {
+  margin: 0;
+  font-size: clamp(17px, 1.55vw, 22px);
+  line-height: 1.4;
+  color: #221a2b;
+  white-space: pre-line;
+}
+
+.list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.listItem {
+  font-size: clamp(17px, 1.55vw, 22px);
+  line-height: 1.35;
+  color: #221a2b;
+}
+
+.bottomCta {
+  margin-top: 18px;
+}
+
+@media (max-width: 840px) {
+  .hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .heroCtaWrap {
+    margin-bottom: 6px;
+  }
+}
