@@ -8,3 +8,4 @@ python-dotenv==1.2.2
 python-jose==3.5.0
 psycopg[binary]==3.3.3
 alembic==1.16.5
+pwdlib==0.3.0

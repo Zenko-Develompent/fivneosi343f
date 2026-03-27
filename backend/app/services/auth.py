@@ -52,7 +52,7 @@ def refresh_user_id(token: str = Header(None, alias="REFRESH_TOKEN")):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
-        if payload.get("type") != "access":
+        if payload.get("type") != "refresh":
             raise HTTPException(status_code=401, detail="Invalid token type")
 
         return int(payload.get("sub"))

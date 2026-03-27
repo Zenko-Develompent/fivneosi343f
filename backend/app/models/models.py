@@ -17,8 +17,8 @@ class Role(SQLModel, table=True):
     name: str = Field(max_length=100, unique=True, index=True)
     users: list["User"] = Relationship(back_populates="role")
 
-    created_at: datetime = Field(default_factory=utc_now, nullable=False)
-    updated_at: datetime = Field(default_factory=utc_now, nullable=False)
+    created_at: datetime | None = Field(default_factory=utc_now, nullable=False)
+    updated_at: datetime | None = Field(default_factory=utc_now, nullable=False)
 
 
 class User(SQLModel, table=True):
