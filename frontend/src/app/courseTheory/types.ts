@@ -1,5 +1,3 @@
-export type QuizQuestionType = "single" | "multiple";
-
 export interface CourseThemeLessonDTO {
   lessonId: string;
   title: string;
@@ -20,10 +18,10 @@ export interface QuizOptionDTO {
 
 export interface QuizQuestionDTO {
   id: string;
-  type: QuizQuestionType;
   prompt: string;
   options: QuizOptionDTO[];
-  correctOptionIds: string[];
+  // Локальный fallback до подключения серверной проверки.
+  correctOptionId?: string;
   explanation?: string;
 }
 
@@ -31,6 +29,8 @@ export interface CourseThemeItemDTO {
   type: "theme";
   themeId: string;
   title: string;
+  // Текст из markdown после загрузки/подстановки с backend.
+  contentMd?: string;
   text: string;
 }
 
@@ -39,9 +39,15 @@ export interface CourseLessonItemDTO {
   themeId: string;
   lessonId: string;
   title: string;
+  // Текст из markdown после загрузки/подстановки с backend.
+  contentMd?: string;
   text: string;
   showCompiler?: boolean;
   compilerInitialCode?: string;
+  // Точка серверной проверки ответа по квизу.
+  quizCheckEndpoint?: string;
+  // Точка серверной проверки результата запуска компилятора.
+  compilerCheckEndpoint?: string;
   quizQuestions?: QuizQuestionDTO[];
 }
 

@@ -1,6 +1,7 @@
 import type { CourseTheoryPayloadDTO } from "./types";
 
-// Структура совпадает с ожидаемым payload от backend.
+// Контракт подготовлен для backend: вопросы могут проверяться сервером,
+// а correctOptionId используется как временный локальный fallback.
 export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
   courseTitle: "Python для исследователей: кодим безопасно",
   themes: [
@@ -30,10 +31,10 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
     },
     {
       themeId: "theme-4",
-      title: "Модуль 4. Контрольные уроки (только выбор ответа)",
+      title: "Модуль 4. Контрольные уроки (выбор 1 ответа)",
       lessons: [
-        { lessonId: "lesson-1", title: "Урок 7. Single choice контроль" },
-        { lessonId: "lesson-2", title: "Урок 8. Multiple choice контроль" },
+        { lessonId: "lesson-1", title: "Урок 7. Контроль: типы данных" },
+        { lessonId: "lesson-2", title: "Урок 8. Контроль: циклы и условия" },
       ],
     },
     {
@@ -48,8 +49,8 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       themeId: "theme-1",
       title: "Модуль 1. Старт в Python",
       text:
-        "В этом модуле ты пишешь самые первые программы на Python.\n" +
-        "Основной фокус: переменные, ввод/вывод и условия.",
+        "В этом модуле ты пишешь первые программы на Python.\n" +
+        "Фокус: переменные, ввод/вывод и условия.",
     },
     {
       type: "lesson",
@@ -57,7 +58,7 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       lessonId: "lesson-1",
       title: "Урок 1. Переменные и print()",
       text:
-        "Создай две переменные: имя и возраст.\n" +
+        "Создай переменные name и age.\n" +
         "Выведи фразу: Привет, меня зовут ... Мне ... лет.",
       compilerInitialCode:
         "name = \"Алия\"\n" +
@@ -66,15 +67,14 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       quizQuestions: [
         {
           id: "t1-l1-q1",
-          type: "single",
           prompt: "Что выводит данные в консоль Python?",
           options: [
             { id: "print", label: "print()" },
             { id: "input", label: "input()" },
             { id: "class", label: "class" },
           ],
-          correctOptionIds: ["print"],
-          explanation: "print() выводит данные, input() считывает ввод пользователя.",
+          correctOptionId: "print",
+          explanation: "print() выводит данные, input() читает ввод пользователя.",
         },
       ],
     },
@@ -107,8 +107,7 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       themeId: "theme-2",
       lessonId: "lesson-1",
       title: "Урок 3. Цикл for и подсчет символов",
-      text:
-        "Напиши программу, которая считает длину пароля через цикл for.",
+      text: "Напиши программу, которая считает длину пароля через цикл for.",
       compilerInitialCode:
         "password = input(\"Введите пароль: \")\n" +
         "count = 0\n" +
@@ -134,16 +133,13 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       quizQuestions: [
         {
           id: "t2-l2-q1",
-          type: "multiple",
-          prompt: "Что обычно делает пароль надежнее?",
+          prompt: "Что сильнее всего повышает надежность пароля?",
           options: [
             { id: "length", label: "Длина 8+ символов" },
-            { id: "digits", label: "Наличие цифр" },
-            { id: "upper", label: "Наличие заглавных букв" },
-            { id: "simple", label: "Шаблон 123456", disabled: true },
+            { id: "same", label: "Один и тот же пароль везде" },
+            { id: "name", label: "Имя пользователя в пароле" },
           ],
-          correctOptionIds: ["length", "digits", "upper"],
-          explanation: "Сильный пароль обычно комбинирует длину и разные типы символов.",
+          correctOptionId: "length",
         },
       ],
     },
@@ -159,8 +155,7 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       themeId: "theme-3",
       lessonId: "lesson-1",
       title: "Урок 5. Валидация пользовательского ввода",
-      text:
-        "Проверь, что логин содержит только буквы и цифры.",
+      text: "Проверь, что логин содержит только буквы и цифры.",
       compilerInitialCode:
         "login = input(\"Введите логин: \")\n" +
         "if login.isalnum():\n" +
@@ -173,8 +168,7 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       themeId: "theme-3",
       lessonId: "lesson-2",
       title: "Урок 6. Поиск подозрительных команд",
-      text:
-        "Сделай проверку на eval, exec и os.system в строке кода.",
+      text: "Проверь строку кода на eval, exec и os.system.",
       compilerInitialCode:
         "line = input(\"Вставь строку кода: \")\n" +
         "blocked = [\"eval\", \"exec\", \"os.system\"]\n" +
@@ -186,42 +180,39 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
     {
       type: "theme",
       themeId: "theme-4",
-      title: "Модуль 4. Контрольные уроки (только выбор ответа)",
+      title: "Модуль 4. Контрольные уроки (выбор 1 ответа)",
       text:
         "В этом модуле отдельные уроки без компилятора.\n" +
-        "Только вопросы с проверкой правильности/неправильности.",
+        "Только single-choice вопросы с проверкой верно/неверно.",
     },
     {
       type: "lesson",
       themeId: "theme-4",
       lessonId: "lesson-1",
-      title: "Урок 7. Single choice контроль",
-      text:
-        "Выбери один правильный вариант ответа по условиям и типам данных.",
+      title: "Урок 7. Контроль: типы данных",
+      text: "Выбери один правильный вариант ответа.",
       showCompiler: false,
       quizQuestions: [
         {
           id: "t4-l1-q1",
-          type: "single",
           prompt: "Какой тип данных у значения 3.14?",
           options: [
             { id: "int", label: "int" },
             { id: "float", label: "float" },
             { id: "str", label: "str" },
           ],
-          correctOptionIds: ["float"],
-          explanation: "Числа с десятичной частью в Python имеют тип float.",
+          correctOptionId: "float",
+          explanation: "Числа с дробной частью в Python имеют тип float.",
         },
         {
           id: "t4-l1-q2",
-          type: "single",
           prompt: "Какой оператор сравнивает на равенство?",
           options: [
             { id: "assign", label: "=" },
             { id: "equal", label: "==" },
             { id: "not-equal", label: "!=" },
           ],
-          correctOptionIds: ["equal"],
+          correctOptionId: "equal",
           explanation: "= присваивает, а == сравнивает значения.",
         },
       ],
@@ -230,23 +221,19 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       type: "lesson",
       themeId: "theme-4",
       lessonId: "lesson-2",
-      title: "Урок 8. Multiple choice контроль",
-      text:
-        "Выбери несколько правильных вариантов по теме циклов.",
+      title: "Урок 8. Контроль: циклы и условия",
+      text: "Выбери один правильный вариант ответа.",
       showCompiler: false,
       quizQuestions: [
         {
           id: "t4-l2-q1",
-          type: "multiple",
-          prompt: "Какие конструкции в Python являются циклами?",
+          prompt: "Какая конструкция отвечает за цикл в Python?",
           options: [
-            { id: "for", label: "for" },
-            { id: "while", label: "while" },
             { id: "if", label: "if" },
+            { id: "for", label: "for" },
             { id: "def", label: "def" },
           ],
-          correctOptionIds: ["for", "while"],
-          explanation: "for и while выполняют повторения, if и def нет.",
+          correctOptionId: "for",
         },
       ],
     },
@@ -267,8 +254,7 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
         "Сделай мини-валидатор пароля:\n" +
         "1. Длина от 8 символов\n" +
         "2. Есть хотя бы одна цифра\n" +
-        "3. Есть хотя бы одна заглавная буква\n" +
-        "После запуска проверь себя в quiz-блоке.",
+        "3. Есть хотя бы одна заглавная буква",
       compilerInitialCode:
         "password = input(\"Введите пароль: \")\n" +
         "has_digit = any(ch.isdigit() for ch in password)\n" +
@@ -281,26 +267,13 @@ export const LOCAL_COURSE_THEORY_PAYLOAD: CourseTheoryPayloadDTO = {
       quizQuestions: [
         {
           id: "t5-l1-q1",
-          type: "single",
           prompt: "Какой метод проверяет, что символ является цифрой?",
           options: [
             { id: "isdigit", label: "isdigit()" },
             { id: "isalpha", label: "isalpha()" },
             { id: "islower", label: "islower()" },
           ],
-          correctOptionIds: ["isdigit"],
-        },
-        {
-          id: "t5-l1-q2",
-          type: "multiple",
-          prompt: "Какие проверки есть в финальном скрипте?",
-          options: [
-            { id: "length", label: "Длина пароля" },
-            { id: "digit", label: "Наличие цифры" },
-            { id: "upper", label: "Наличие заглавной буквы" },
-            { id: "bcrypt", label: "Хэширование bcrypt" },
-          ],
-          correctOptionIds: ["length", "digit", "upper"],
+          correctOptionId: "isdigit",
         },
       ],
     },

@@ -5,7 +5,6 @@ import Header from "@/components/header/header";
 import Sidebar from "@/components/sidebar/sidebar";
 import Button from "@/components/button/button";
 import SingleChoice from "@/components/singleChoice/singleChoice";
-import MultipleChoice from "@/components/multipleChoice/multipleChoice";
 import PythonCompiler, {
   preloadPythonCompilerAssets,
 } from "@/components/pythonCompiler/pythonCompiler";
@@ -29,34 +28,24 @@ function getCourseItemKey(item: CourseItemDTO): string {
   return `${item.themeId}-${item.lessonId}`;
 }
 
-function normalizeOptionIds(values: string[]): string[] {
-  return Array.from(new Set(values)).sort();
-}
-
-function areSameSelections(left: string[], right: string[]): boolean {
-  if (left.length !== right.length) {
-    return false;
-  }
-
-  return left.every((value, index) => value === right[index]);
-}
-
 function evaluateQuestionAnswer(
   question: QuizQuestionDTO,
-  selectedValues: string[] | undefined
+  selectedOptionId: string | undefined
 ): QuestionResultStatus {
-  const selected = normalizeOptionIds(selectedValues ?? []);
-  if (selected.length === 0) {
+  if (!selectedOptionId) {
     return "unanswered";
   }
 
-  const expected = normalizeOptionIds(question.correctOptionIds);
-  return areSameSelections(selected, expected) ? "correct" : "incorrect";
+  if (!question.correctOptionId) {
+    return "unanswered";
+  }
+
+  return question.correctOptionId === selectedOptionId ? "correct" : "incorrect";
 }
 
 function buildLessonCheckResult(
   questions: QuizQuestionDTO[],
-  answersByQuestion: Record<string, string[]>
+  answersByQuestion: Record<string, string>
 ): LessonCheckResult {
   const questionStatusById: Record<string, QuestionResultStatus> = {};
   let score = 0;
@@ -77,21 +66,22 @@ function buildLessonCheckResult(
   };
 }
 
-function getCorrectAnswersText(question: QuizQuestionDTO): string {
-  const labels = question.options
-    .filter((option) => question.correctOptionIds.includes(option.id))
-    .map((option) => option.label);
+function getCorrectAnswerText(question: QuizQuestionDTO): string {
+  if (!question.correctOptionId) {
+    return "проверяется на сервере";
+  }
 
-  return labels.join(", ");
+  const correctOption = question.options.find(
+    (option) => option.id === question.correctOptionId
+  );
+  return correctOption?.label ?? "ответ не задан";
 }
 
 export default function CourseTheoryPage() {
   const coursePayload = LOCAL_COURSE_THEORY_PAYLOAD;
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [lessonAnswers, setLessonAnswers] = useState<
-    Record<string, Record<string, string[]>>
-  >({});
+  const [lessonAnswers, setLessonAnswers] = useState<Record<string, Record<string, string>>>({});
   const [lessonCheckResults, setLessonCheckResults] = useState<
     Record<string, LessonCheckResult>
   >({});
@@ -121,15 +111,14 @@ export default function CourseTheoryPage() {
   const currentQuizQuestions = currentLesson?.quizQuestions ?? [];
   const hasQuizQuestions = currentQuizQuestions.length > 0;
   const shouldShowCompiler = Boolean(currentLesson && currentLesson.showCompiler !== false);
-  const currentLessonAnswers = currentLessonKey
-    ? lessonAnswers[currentLessonKey] ?? {}
-    : {};
+  const currentLessonAnswers = currentLessonKey ? lessonAnswers[currentLessonKey] ?? {} : {};
   const currentLessonCheckResult = currentLessonKey
     ? lessonCheckResults[currentLessonKey]
     : undefined;
 
   const activeThemeId = currentItem.themeId;
   const activeLessonId = currentItem.type === "lesson" ? currentItem.lessonId : undefined;
+  const currentContent = currentItem.contentMd ?? currentItem.text;
 
   useEffect(() => {
     const warmup = () => {
@@ -162,16 +151,14 @@ export default function CourseTheoryPage() {
     if (index !== -1) setCurrentIndex(index);
   };
 
-  const handleQuestionAnswerChange = (questionId: string, values: string[]) => {
+  const handleQuestionAnswerChange = (questionId: string, selectedOptionId: string) => {
     if (!currentLessonKey) return;
-
-    const normalizedValues = normalizeOptionIds(values);
 
     setLessonAnswers((prev) => ({
       ...prev,
       [currentLessonKey]: {
         ...(prev[currentLessonKey] ?? {}),
-        [questionId]: normalizedValues,
+        [questionId]: selectedOptionId,
       },
     }));
 
@@ -245,7 +232,7 @@ export default function CourseTheoryPage() {
           </div>
 
           <h1 className={styles.contentTitle}>{currentItem.title}</h1>
-          <p className={styles.contentText}>{currentItem.text}</p>
+          <p className={styles.contentText}>{currentContent}</p>
 
           {currentLesson && (
             <div className={styles.practiceStack}>
@@ -265,7 +252,7 @@ export default function CourseTheoryPage() {
 
                   <div className={styles.questionsList}>
                     {currentQuizQuestions.map((question, index) => {
-                      const selectedValues = currentLessonAnswers[question.id] ?? [];
+                      const selectedOptionId = currentLessonAnswers[question.id];
                       const status = currentLessonCheckResult?.questionStatusById[question.id];
                       const statusClass =
                         status === "correct"
@@ -278,43 +265,23 @@ export default function CourseTheoryPage() {
                         <article key={question.id} className={styles.questionCard}>
                           <div className={styles.questionMeta}>
                             <span className={styles.questionNumber}>Вопрос {index + 1}</span>
-                            <span className={styles.questionType}>
-                              {question.type === "single"
-                                ? "Один вариант"
-                                : "Несколько вариантов"}
-                            </span>
+                            <span className={styles.questionType}>Один вариант</span>
                           </div>
 
-                          {question.type === "single" ? (
-                            <SingleChoice
-                              name={`single-${currentLessonKey}-${question.id}`}
-                              question={question.prompt}
-                              options={question.options.map((option) => ({
-                                value: option.id,
-                                label: option.label,
-                                description: option.description,
-                                disabled: option.disabled,
-                              }))}
-                              value={selectedValues[0]}
-                              onChange={(value) =>
-                                handleQuestionAnswerChange(question.id, [value])
-                              }
-                            />
-                          ) : (
-                            <MultipleChoice
-                              question={question.prompt}
-                              options={question.options.map((option) => ({
-                                value: option.id,
-                                label: option.label,
-                                description: option.description,
-                                disabled: option.disabled,
-                              }))}
-                              values={selectedValues}
-                              onChange={(values) =>
-                                handleQuestionAnswerChange(question.id, values)
-                              }
-                            />
-                          )}
+                          <SingleChoice
+                            name={`single-${currentLessonKey}-${question.id}`}
+                            question={question.prompt}
+                            options={question.options.map((option) => ({
+                              value: option.id,
+                              label: option.label,
+                              description: option.description,
+                              disabled: option.disabled,
+                            }))}
+                            value={selectedOptionId}
+                            onChange={(value) =>
+                              handleQuestionAnswerChange(question.id, value)
+                            }
+                          />
 
                           {status && (
                             <p className={`${styles.questionStatus} ${statusClass}`}>
@@ -326,7 +293,7 @@ export default function CourseTheoryPage() {
 
                           {status === "incorrect" && (
                             <p className={styles.correctAnswers}>
-                              Правильный ответ: {getCorrectAnswersText(question)}
+                              Правильный ответ: {getCorrectAnswerText(question)}
                             </p>
                           )}
 
