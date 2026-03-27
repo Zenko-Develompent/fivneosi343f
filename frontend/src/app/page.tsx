@@ -6,6 +6,7 @@ export default function LoginPage() {
       <div className={styles.main}>
         <div className={styles.loginWindow}>
             <h1 className={styles.title}>Вход</h1>
+						
             <div className={styles.hipoinfo}>
               <div className={styles.imageHipos}>
                 <div className={styles.image}></div>

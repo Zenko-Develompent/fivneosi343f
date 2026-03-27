@@ -1,6 +1,6 @@
 import Card from "@/components/coursesCards/courseCard";
 import ButtonS from "@/components/buttonS/buttonS";
-import Header from "@/components/Header/header";
+import Header from "@/components/header/header";
 import HipoImg from "@/shared/assets/images/hipocatalog.png";
 import styles from "./page.module.css";
 

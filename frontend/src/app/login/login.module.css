@@ -1,45 +1,39 @@
-
-.main{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;  
+.main {
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
-.loginWindow{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+.loginWindow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 
-.title{
-    font-size: var(--heading2);
-}
-.title3{
-    font-size: var(--heading5);
-}
-.hipoinfo{
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 80px;
+.leftPane {
+	min-height: 100vh;
 }
 
-.image{
-    width: 160px;
-    height: 200px;
-    background-color: red;
+.heroImage {
+  height: 100%;
+  display: block;
 }
 
-.titleChild, .titleParent{
-    font-size: var(--heading5);
-    display: flex;
-    justify-content: center;
+.forms {
+	border: 1px solid #000000;
+	border-radius: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+	align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  padding: 40px 56px;
 }
 
-.forms{
-    display: flex;
-    flex-direction: column;
+.title {
+  font-size: var(--heading2);
+	margin-bottom: 50px;
 }
+

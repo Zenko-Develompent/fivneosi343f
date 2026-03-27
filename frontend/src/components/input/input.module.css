@@ -1,0 +1,20 @@
+.wrapper {
+	display: flex;
+	flex-direction: column;
+  width: 100%;
+}
+
+.input {
+  justify-content: center;
+  gap: 12px;
+	padding: 10px 10px;
+	border-radius: 16px;
+	font-size: calc(16px + 4 * (100vw - 320px) / 1600);
+	margin-top: 5px;
+  width: 100%;
+}
+
+.label {
+	font-weight: 600;
+	font-size: 20px;
+}
