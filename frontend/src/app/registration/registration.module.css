@@ -1,9 +1,15 @@
-
 .main{
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;  
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    background-image: url("../../shared/assets/images/backgroundcolor.png");
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: contain;
+    background-color: #f4f9ff;
 }
 
 .registrationWindow{
@@ -11,13 +17,20 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+		border: 1px solid #000000;
+		max-width: 750px;
+		width: 100%;
+		padding: 48px 36px;
+		border-radius: 16px;
 }
 
 .title{
     font-size: var(--heading2);
+		margin-bottom: 3%;
 }
 .title3{
     font-size: var(--heading4);
+		margin-bottom: 32px;
 }
 .hipoinfo{
     display: flex;
@@ -27,10 +40,16 @@
     gap: 80px;
 }
 
-.image{
-    width: 160px;
-    height: 200px;
-    background-color: red;
+.child, .parent{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+		border: 1px solid #000000;
+		padding: 10px 60px;
+		border-radius: 16px;
+		margin-bottom: 32px;
+		cursor: pointer;
 }
 
 .titleChild, .titleParent{
@@ -40,6 +59,11 @@
 }
 
 .forms{
-    display: flex;
-    flex-direction: column;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	gap: 20px;
+	max-width: 450px;
+	justify-content: center;
+	align-items: center;
 }

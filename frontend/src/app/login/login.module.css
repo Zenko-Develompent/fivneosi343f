@@ -1,39 +1,48 @@
 .main {
-	display: flex;
-	justify-content: center;
-	align-items: center;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #c4dcff 0%, #ffffff 100%);
 }
 
 .loginWindow {
   width: 100%;
+  min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: center;
 }
 
 .leftPane {
-	min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .heroImage {
-  height: 100%;
+  width: 100%;
   display: block;
+  object-fit: contain;
 }
 
 .forms {
-	border: 1px solid #000000;
-	border-radius: 50px;
+  border: 1px solid #000000;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-	align-items: center;
-  gap: 12px;
+  align-items: center;
+  gap: 20px;
   width: 100%;
   max-width: 520px;
-  padding: 40px 56px;
+  padding: 40px 24px;
+  justify-self: center;
+  align-self: center;
 }
 
 .title {
   font-size: var(--heading2);
-	margin-bottom: 50px;
+  margin-bottom: 50px;
 }
-

@@ -1,9 +1,9 @@
 "use client";
 
 import Input from "@/components/input/input";
-import Link from "next/link";
-import HipoLogin from "@/shared/assets/images/hipilogin.png";
 import ButtoM from "@/components/buttonM/buttonM";
+import HipoLogin from "@/shared/assets/images/hipilogin.png";
+import Link from "next/link";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
