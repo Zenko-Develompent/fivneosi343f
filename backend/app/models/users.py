@@ -15,11 +15,11 @@ class Role(SQLModel, table=True):
     __tablename__ = "roles" 
 
     id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(max_length=100, unique=True, index=True) 
-    users: list["User"] = Relationship(back_populates="role") 
+    name: str = Field(max_length=100, unique=True, index=True)
+    users: list["User"] = Relationship(back_populates="role")
 
-    created_at: datetime = Field(default_factory=utc_now, nullable=False) 
-    updated_at: datetime = Field(default_factory=utc_now, nullable=False) 
+    created_at: datetime = Field(default_factory=utc_now, nullable=False)
+    updated_at: datetime = Field(default_factory=utc_now, nullable=False)
 
 
 class User(SQLModel, table=True):
@@ -42,8 +42,6 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now, nullable=False) 
     updated_at: datetime = Field(default_factory=utc_now, nullable=False) 
 
-
-
 class UserAnswer(SQLModel, table=True): 
     __tablename__ = "user_answers" 
 
@@ -54,7 +52,7 @@ class UserAnswer(SQLModel, table=True):
     is_correct: bool | None = Field(default=None) 
     score: int = Field(default=0, ge=0) 
     awarded_xp: int = Field(default=0, ge=0) 
-    status: UserAnswerStatus = Field(default=UserAnswerStatus.SUBMITTED, index=True) 
+    status: UserAnswerStatus = Field(default=UserAnswerStatus.SUBMITTED, index=True)
     attempt: int = Field(default=1, ge=1) 
     checked_at: datetime | None = Field(default=None) 
 
