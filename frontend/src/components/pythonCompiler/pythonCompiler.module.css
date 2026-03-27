@@ -1,0 +1,179 @@
+.container {
+  width: 100%;
+  max-width: 960px;
+  border: 1px solid #dbe2ea;
+  border-radius: 18px;
+  background: #fff;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.status {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.statusLoading {
+  color: #a16100;
+}
+
+.statusReady {
+  color: #1f7d46;
+}
+
+.statusError {
+  color: #c23636;
+}
+
+.editor {
+  border: 1px solid #edf0f4;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.errorCard {
+  border: 1px solid #f3bcbc;
+  border-radius: 12px;
+  background: #fff5f5;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.errorTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #9b1d1d;
+}
+
+.errorHint {
+  font-size: 14px;
+  line-height: 1.35;
+  color: #6f2a2a;
+}
+
+.errorDetails {
+  margin-top: 2px;
+  color: #7a3434;
+  font-size: 13px;
+}
+
+.errorDetails summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.errorTechnical {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px dashed #e7baba;
+  background: #fff;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #812121;
+  white-space: pre-wrap;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+}
+
+.runButton {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  background: #202226;
+  transition: opacity 0.15s ease;
+}
+
+.runButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stopButton {
+  border: 1px solid #f0c8c8;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #8f1f1f;
+  background: #fff4f4;
+  transition: opacity 0.15s ease;
+}
+
+.stopButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.outputWrap {
+  display: grid;
+  gap: 8px;
+}
+
+.outputLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #232b38;
+}
+
+.output {
+  min-height: 96px;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  background: #f9fafb;
+  padding: 12px;
+  color: #1d2733;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+}
+
+.outputError {
+  border-color: #f0c6c6;
+  background: #fff9f9;
+}
+
+@media (max-width: 640px) {
+  .container {
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .runButton {
+    width: 100%;
+  }
+
+  .stopButton {
+    width: 100%;
+  }
+}

@@ -54,6 +54,10 @@
   max-width: 760px;
 }
 
+.compilerBlock {
+  margin-top: 28px;
+}
+
 .nextButton {
   margin-top: 28px;
   max-width: 220px;

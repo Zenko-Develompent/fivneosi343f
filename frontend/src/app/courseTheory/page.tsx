@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/header/header";
 import Sidebar from "@/components/sidebar/sidebar";
 import Button from "@/components/button/button";
+import PythonCompiler, {
+  preloadPythonCompilerAssets,
+} from "@/components/pythonCompiler/pythonCompiler";
 import styles from "./course.module.css";
 
 type CourseItem =
@@ -89,6 +92,24 @@ export default function CourseTheoryPage() {
     });
     return idx === -1 ? 1 : idx + 1;
   }, [currentItem, currentThemeItems]);
+  const shouldShowCompiler =
+    currentItem.type === "lesson" &&
+    currentItem.themeId === "theme-1" &&
+    currentItem.lessonId === "lesson-1";
+
+  useEffect(() => {
+    const warmup = () => {
+      void preloadPythonCompilerAssets();
+    };
+
+    if (typeof globalThis.requestIdleCallback === "function") {
+      const idleId = globalThis.requestIdleCallback(warmup, { timeout: 1500 });
+      return () => globalThis.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = setTimeout(warmup, 500);
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   const handleThemeSelect = (themeId: string) => {
     const index = COURSE_FLOW.findIndex(
@@ -153,6 +174,11 @@ export default function CourseTheoryPage() {
           </div>
           <h1 className={styles.contentTitle}>{currentItem.title}</h1>
           <p className={styles.contentText}>{currentItem.text}</p>
+          {shouldShowCompiler && (
+            <div className={styles.compilerBlock}>
+              <PythonCompiler title="Python-песочница" />
+            </div>
+          )}
           <div className={styles.nextButton}>
             <Button size="m" variant="filled" fullWidth title={isLastStep ? "В каталог" : "Дальше"} onClick={handleNext} />
           </div>
