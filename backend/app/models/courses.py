@@ -23,6 +23,7 @@ class CourseCategory(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     title: str = Field(index=True, unique=True, max_length=255)
+
     created_at: datetime = Field(default_factory=utc_now, nullable=False)
     updated_at: datetime = Field(default_factory=utc_now, nullable=False)
 
@@ -55,6 +56,7 @@ class Module(SQLModel, table=True):
     title: str = Field(max_length=255)
     description: str | None = Field(default=None, max_length=2000)
     order_index: int = Field(default=1, ge=1, index=True)
+
     created_at: datetime = Field(default_factory=utc_now, nullable=False)
     updated_at: datetime = Field(default_factory=utc_now, nullable=False)
 
@@ -70,6 +72,7 @@ class Topic(SQLModel, table=True):
     title: str = Field(max_length=255)
     description: str | None = Field(default=None, max_length=2000)
     order_index: int = Field(default=1, ge=1, index=True)
+
     created_at: datetime = Field(default_factory=utc_now, nullable=False)
     updated_at: datetime = Field(default_factory=utc_now, nullable=False)
 
@@ -90,6 +93,7 @@ class Task(SQLModel, table=True):
     correct_answers: str | None = Field(default=None, max_length=2000)
     xp_reward: int = Field(default=0, ge=0)
     is_published: bool = Field(default=False)
+
     created_at: datetime = Field(default_factory=utc_now, nullable=False)
     updated_at: datetime = Field(default_factory=utc_now, nullable=False)
 
