@@ -5,7 +5,16 @@ from sqlmodel import SQLModel, Session, select
 
 from app.core.db import get_session
 from app.core.security import get_current_user_id
-from app.models.models import Course, Module, Task, TaskType, Topic, UserCourse, UserCourseStatus
+from app.models.models import (
+    Course,
+    Module,
+    Task,
+    TaskType,
+    Topic,
+    User,
+    UserCourse,
+    UserCourseStatus,
+)
 from app.services.course_progress import recalculate_user_course_progress
 
 router = APIRouter(prefix="/courses", tags=["courses"])
@@ -212,6 +221,13 @@ def enroll_course(
     session: Session = Depends(get_session),
     user_id: int = Depends(get_current_user_id),
 ):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user token. Please log in again.",
+        )
+
     course = session.exec(
         select(Course).where(
             Course.id == course_id,

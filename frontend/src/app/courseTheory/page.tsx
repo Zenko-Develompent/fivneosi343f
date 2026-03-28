@@ -5,16 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/header/header";
 import Sidebar from "@/components/sidebar/sidebar";
 import Button from "@/components/button/button";
-import FixCodeGame from "@/components/games/fixCode/fixCode";
-import GuessCodeGame from "@/components/games/guessCode/guessCode";
-import MemoryMatchGame from "@/components/games/memoryMatch/memoryMatch";
 import PythonCompiler from "@/components/pythonCompiler/pythonCompiler";
 import {
   ApiError,
   CourseTreePublic,
   TaskAnswerResponse,
   TaskTreePublic,
-  completeTaskActivity,
   getApiErrorMessage,
   getCourseTree,
   submitTaskAnswer,
@@ -40,12 +36,29 @@ function isFinalTask(task: TaskTreePublic): boolean {
   return source.includes("итог") || source.includes("финал");
 }
 
+function orderThemeLessons(lessons: TaskTreePublic[]): TaskTreePublic[] {
+  return [...lessons].sort((a, b) => {
+    const lecturePriority = (task: TaskTreePublic) => (task.task_type === "lecture" ? 0 : 1);
+    const priorityDiff = lecturePriority(a) - lecturePriority(b);
+
+    if (priorityDiff !== 0) {
+      return priorityDiff;
+    }
+
+    if (a.order_index !== b.order_index) {
+      return a.order_index - b.order_index;
+    }
+
+    return a.id - b.id;
+  });
+}
+
 function flattenLessons(program: CourseTreePublic): FlatLessonRef[] {
   const flat: FlatLessonRef[] = [];
 
   for (const module of program.modules) {
     for (const theme of module.topics) {
-      for (const lesson of theme.tasks) {
+      for (const lesson of orderThemeLessons(theme.tasks)) {
         flat.push({
           moduleId: String(module.id),
           moduleTitle: module.title,
@@ -76,9 +89,11 @@ function CourseTheoryPageContent() {
   const [selectedLessonId, setSelectedLessonId] = useState<string>("");
   const [courseTree, setCourseTree] = useState<CourseTreePublic | null>(null);
   const [sessionCompletedIds, setSessionCompletedIds] = useState<number[]>([]);
+  const [viewedLectureIds, setViewedLectureIds] = useState<number[]>([]);
   const [selectedOptionByTaskId, setSelectedOptionByTaskId] = useState<Record<number, string>>(
     {}
   );
+  const [compilerCodeByTaskId, setCompilerCodeByTaskId] = useState<Record<number, string>>({});
   const [progressPercent, setProgressPercent] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -122,6 +137,7 @@ function CourseTheoryPageContent() {
         setSessionCompletedIds([]);
         setViewedLectureIds([]);
         setSelectedOptionByTaskId({});
+        setCompilerCodeByTaskId({});
         setSelectedLessonId("");
         setMessage("");
       } catch (error) {
@@ -324,8 +340,8 @@ function CourseTheoryPageContent() {
     }
   };
 
-  const handleCompleteActivity = async () => {
-    if (!activeLesson) {
+  const handleCompilerCheck = async () => {
+    if (!activeLesson || lessonEnhancement?.interactionType !== "compiler") {
       return;
     }
 
@@ -334,16 +350,30 @@ function CourseTheoryPageContent() {
       return;
     }
 
+    const code =
+      compilerCodeByTaskId[activeLesson.id] ?? lessonEnhancement.compilerInitialCode ?? "";
+    if (!code.trim()) {
+      handleWrongLesson("Добавь код перед проверкой.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const response = await completeTaskActivity(activeLesson.id);
-      handleSuccessResult(response, "Урок засчитан.");
+      const response = await submitTaskAnswer(activeLesson.id, code);
+
+      if (!response.is_correct) {
+        handleWrongLesson("Код пока не прошёл проверку. Попробуй доработать решение.");
+        setProgressPercent(response.progress_percent);
+        return;
+      }
+
+      handleSuccessResult(response, "Практика по коду зачтена.");
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         router.replace("/login");
         return;
       }
-      handleWrongLesson(getApiErrorMessage(error, "Не удалось завершить урок."));
+      handleWrongLesson(getApiErrorMessage(error, "Не удалось проверить код."));
     } finally {
       setIsSubmitting(false);
     }
@@ -351,14 +381,19 @@ function CourseTheoryPageContent() {
 
   const handleThemeSelect = (themeId: string) => {
     const themeLessons = lessons.filter((item) => item.themeId === themeId);
+    const firstLecture = themeLessons.find(
+      (item) =>
+        item.lesson.task_type === "lecture" && unlockedByLessonId.get(String(item.lesson.id))
+    );
     const firstUnlocked = themeLessons.find((item) => unlockedByLessonId.get(String(item.lesson.id)));
+    const target = firstLecture ?? firstUnlocked;
 
-    if (!firstUnlocked) {
+    if (!target) {
       handleWrongLesson("Тема пока заблокирована.");
       return;
     }
 
-    setSelectedLessonId(String(firstUnlocked.lesson.id));
+    setSelectedLessonId(String(target.lesson.id));
     setMessage("");
   };
 
@@ -444,16 +479,15 @@ function CourseTheoryPageContent() {
         : styles.messageDefault;
 
   const interactionLabel =
-    lessonEnhancement.interactionType === "game"
-      ? "Игра"
+    lessonEnhancement.interactionType === "theory"
+      ? "Лекция"
       : lessonEnhancement.interactionType === "compiler"
-        ? "Компилятор"
-        : "Один вопрос";
+        ? "Практика кода"
+        : "Квиз";
 
-  const showCompleteButton =
+  const showCompilerCheckButton =
     activeLesson.task_type !== "lecture" &&
-    (lessonEnhancement.interactionType === "game" ||
-      lessonEnhancement.interactionType === "compiler");
+    lessonEnhancement.interactionType === "compiler";
 
   return (
     <div>
@@ -468,23 +502,21 @@ function CourseTheoryPageContent() {
           modules={courseTree.modules.map((module) => ({
             moduleId: String(module.id),
             title: module.title,
-            themes: module.topics.map((theme) => ({
-              themeId: String(theme.id),
-              title: theme.title,
-              isDisabled: (() => {
-                const firstTask = theme.tasks[0];
-                if (!firstTask) {
-                  return false;
-                }
+            themes: module.topics.map((theme) => {
+              const orderedThemeTasks = orderThemeLessons(theme.tasks);
+              const firstTask = orderedThemeTasks[0];
 
-                return !unlockedByLessonId.get(String(firstTask.id));
-              })(),
-              lessons: theme.tasks.map((lesson) => ({
-                lessonId: String(lesson.id),
-                title: lesson.title,
-                isDisabled: !unlockedByLessonId.get(String(lesson.id)),
-              })),
-            })),
+              return {
+                themeId: String(theme.id),
+                title: theme.title,
+                isDisabled: firstTask ? !unlockedByLessonId.get(String(firstTask.id)) : false,
+                lessons: orderedThemeTasks.map((lesson) => ({
+                  lessonId: String(lesson.id),
+                  title: lesson.title,
+                  isDisabled: !unlockedByLessonId.get(String(lesson.id)),
+                })),
+              };
+            }),
           }))}
           activeModuleId={currentLessonRef.moduleId}
           activeThemeId={currentLessonRef.themeId}
@@ -542,7 +574,7 @@ function CourseTheoryPageContent() {
             {lessonEnhancement.interactionType === "singleQuestion" &&
               lessonEnhancement.singleQuestion && (
                 <section className={styles.quizBlock}>
-                  <h2 className={styles.quizTitle}>Один простой вопрос</h2>
+                  <h2 className={styles.quizTitle}>Квиз</h2>
                   <p className={styles.quizSummary}>{lessonEnhancement.singleQuestion.prompt}</p>
 
                   <div className={styles.singleQuestionOptions}>
@@ -578,44 +610,6 @@ function CourseTheoryPageContent() {
                 </section>
               )}
 
-            {lessonEnhancement.interactionType === "game" && (
-              <section className={styles.gameBlock}>
-                <h2 className={styles.quizTitle}>{lessonEnhancement.gameTitle}</h2>
-                <p className={styles.gameDescription}>{lessonEnhancement.gameDescription}</p>
-
-                {lessonEnhancement.gameType === "memoryMatch" &&
-                  lessonEnhancement.memoryPairs &&
-                  lessonEnhancement.memoryPairs.length > 0 && (
-                    <MemoryMatchGame pairs={lessonEnhancement.memoryPairs} />
-                  )}
-
-                {lessonEnhancement.gameType === "guessCode" &&
-                  lessonEnhancement.guessCodeQuestions &&
-                  lessonEnhancement.guessCodeQuestions.length > 0 && (
-                    <GuessCodeGame questions={lessonEnhancement.guessCodeQuestions} />
-                  )}
-
-                {lessonEnhancement.gameType === "fixCode" &&
-                  lessonEnhancement.fixCodeTasks &&
-                  lessonEnhancement.fixCodeTasks.length > 0 && (
-                    <FixCodeGame tasks={lessonEnhancement.fixCodeTasks} />
-                  )}
-
-                {showCompleteButton && (
-                  <div className={styles.activityActions}>
-                    <Button
-                      size="m"
-                      variant="filled"
-                      color="logo"
-                      title={isSubmitting ? "Сохраняем..." : "Завершить урок"}
-                      onClick={() => void handleCompleteActivity()}
-                      disabled={!isActiveUnlocked || isSubmitting}
-                    />
-                  </div>
-                )}
-              </section>
-            )}
-
             {lessonEnhancement.interactionType === "compiler" && (
               <section className={styles.quizBlock}>
                 <h2 className={styles.quizTitle}>{lessonEnhancement.compilerTitle}</h2>
@@ -636,8 +630,8 @@ function CourseTheoryPageContent() {
                       size="m"
                       variant="filled"
                       color="logo"
-                      title={isSubmitting ? "Сохраняем..." : "Завершить урок"}
-                      onClick={() => void handleCompleteActivity()}
+                      title={isSubmitting ? "Проверяем..." : "Проверить код"}
+                      onClick={() => void handleCompilerCheck()}
                       disabled={!isActiveUnlocked || isSubmitting}
                     />
                   </div>

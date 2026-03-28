@@ -61,20 +61,40 @@ def check_task_answer(task: Task, answer_body: str) -> bool:
         return False
 
     raw = task.correct_answers.strip()
+    normalized_answer = normalize_text(answer_body)
 
     try:
         parsed = json.loads(raw)
 
         if isinstance(parsed, list):
             valid_answers = [normalize_text(str(item)) for item in parsed]
-            return normalize_text(answer_body) in valid_answers
+            if normalized_answer in valid_answers:
+                return True
+
+            looks_like_code = (
+                "\n" in answer_body
+                or "def " in normalized_answer
+                or "if " in normalized_answer
+                or "for " in normalized_answer
+                or "while " in normalized_answer
+                or "print(" in normalized_answer
+                or "return" in normalized_answer
+                or "=" in answer_body
+            )
+
+            if looks_like_code:
+                required_matches = 1 if len(valid_answers) <= 1 else 2
+                found_matches = sum(1 for value in valid_answers if value and value in normalized_answer)
+                return found_matches >= min(required_matches, len(valid_answers))
+
+            return False
 
         if isinstance(parsed, str):
-            return normalize_text(answer_body) == normalize_text(parsed)
+            return normalized_answer == normalize_text(parsed)
     except json.JSONDecodeError:
         pass
 
-    return normalize_text(answer_body) == normalize_text(raw)
+    return normalized_answer == normalize_text(raw)
 
 
 @router.post("/{task_id}/answer", response_model=TaskAnswerResponse)
@@ -227,6 +247,12 @@ def complete_task_activity(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Lecture task does not require completion",
+        )
+
+    if task.correct_answers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Task requires answer submission",
         )
 
     topic = session.get(Topic, task.topic_id)

@@ -125,8 +125,8 @@ def get_my_profile(
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user token. Please log in again.",
         )
 
     check_and_award_level_achievements(session=session, user=user)
@@ -179,7 +179,17 @@ def get_my_profile(
 
 
 @router.get("/refresh")
-def refresh_user(user_id: int = Depends(refresh_user_id)):
+def refresh_user(
+    user_id: int = Depends(refresh_user_id),
+    session: Session = Depends(get_session),
+):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token. Please log in again.",
+        )
+
     access_token, refresh_token = create_tokens(user_id)
     return {
         "access_token": access_token,
@@ -200,8 +210,8 @@ def get_my_achievements(
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user token. Please log in again.",
         )
 
     check_and_award_level_achievements(session=session, user=user)

@@ -41,6 +41,7 @@ interface PythonCompilerProps {
   initialCode?: string;
   editorHeight?: number | string;
   className?: string;
+  onCodeChange?: (value: string) => void;
 }
 
 interface FriendlyRuntimeError {
@@ -294,6 +295,7 @@ export default function PythonCompiler({
   initialCode = "",
   editorHeight = 320,
   className = "",
+  onCodeChange,
 }: PythonCompilerProps) {
   const pyodideRef = useRef<PyodideLike | null>(null);
   const interruptBufferRef = useRef<Int32Array | null>(null);
@@ -306,6 +308,11 @@ export default function PythonCompiler({
   const [isRuntimeLoading, setIsRuntimeLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+
+  useEffect(() => {
+    setCode(initialCode);
+    onCodeChange?.(initialCode);
+  }, [initialCode, onCodeChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -408,11 +415,13 @@ export default function PythonCompiler({
 
   const handleEditorChange = useCallback<OnChange>(
     (value) => {
-      setCode(value ?? "");
+      const nextCode = value ?? "";
+      setCode(nextCode);
+      onCodeChange?.(nextCode);
       setFriendlyError(null);
       clearEditorMarkers();
     },
-    [clearEditorMarkers]
+    [clearEditorMarkers, onCodeChange]
   );
 
   const handleRun = async () => {

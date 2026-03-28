@@ -1,27 +1,50 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import Session, select
 
 from app.api.routes import achievements, rating, task
 from app.api.routes.courses import router as courses_router
 from app.api.routes.users import router as users_router
-from app.core.db import create_db_and_tables
+from app.core.db import create_db_and_tables, engine
+from app.models.models import Course
+from app.scripts.import_courses_from_content import import_all_courses
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
-    print("ГОРОД ПРОСЫПАЕТСЯ")
+
+    auto_import_enabled = os.getenv("AUTO_IMPORT_COURSES_ON_STARTUP", "false").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if auto_import_enabled:
+        with Session(engine) as session:
+            has_courses = session.exec(select(Course.id).limit(1)).first() is not None
+
+        if not has_courses:
+            totals = import_all_courses()
+            print(
+                "AUTO_IMPORT_COURSES_ON_STARTUP: "
+                f"files={totals['files']}, courses={totals['courses']}, "
+                f"modules={totals['modules']}, topics={totals['topics']}, "
+                f"tasks={totals['tasks']}"
+            )
+
+    print("SERVER_STARTUP_COMPLETE")
     yield
-    print("ГОРОД ЗАСЫПАЕТ")
+    print("SERVER_SHUTDOWN")
 
 
 app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Разрешает ВСЕ домены и IP
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
