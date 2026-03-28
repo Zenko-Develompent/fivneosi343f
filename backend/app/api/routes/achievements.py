@@ -6,6 +6,7 @@ from sqlmodel import Session, SQLModel, select
 from app.core.db import get_session
 from app.core.security import get_current_user_id
 from app.models.models import Achievement, AchievementUser
+from app.services.give_achievement import ensure_level_achievements
 
 
 router = APIRouter(prefix="/achievements", tags=["achievements"])
@@ -30,6 +31,9 @@ class UserAchievementPublic(SQLModel):
 
 @router.get("", response_model=list[AchievementPublic])
 def get_achievements(session: Session = Depends(get_session)):
+    ensure_level_achievements(session)
+    session.commit()
+
     achievements = session.exec(
         select(Achievement)
         .where(Achievement.is_active.is_(True))

@@ -1,34 +1,14 @@
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, SQLModel, select
+from sqlmodel import SQLModel, Session, select
 
 from app.core.db import get_session
-from app.models.models import Course, CourseCategory, UserCourse
-from fastapi import Depends, HTTPException, Request
-from jose import JWTError
-
-from fastapi import APIRouter, Depends
-from sqlmodel import Session, SQLModel, select
-from app.models.models import (
-    Achievement,
-    AchievementUser,
-    Course,
-    Module,
-    Task,
-    Topic,
-    User,
-    UserAnswer,
-    UserCourse,
-    UserCourseStatus,
-)
-from app.core.db import get_session
-from app.models.models import Course, UserCourse, UserCourseStatus, TaskType
 from app.core.security import get_current_user_id
+from app.models.models import Course, Module, Task, TaskType, Topic, UserCourse, UserCourseStatus
+from app.services.course_progress import recalculate_user_course_progress
 
 router = APIRouter(prefix="/courses", tags=["courses"])
-
-
-
 
 
 class CategoryPublic(SQLModel):
@@ -59,38 +39,6 @@ class CoursePreviewPublic(SQLModel):
 class HomeCoursesResponse(SQLModel):
     all_courses: list[CoursePreviewPublic]
     my_courses: list[CoursePreviewPublic]
-
-
-
-
-class CategoryPublic(SQLModel):
-    id: int
-    title: str
-
-
-class CourseDetailPublic(SQLModel):
-    id: int
-    title: str
-    description: str | None = None
-    is_published: bool
-    category_id: int | None = None
-    progress_percent: float
-    created_at: datetime
-    updated_at: datetime
-    category: CategoryPublic | None = None
-
-
-class CategoryPublic(SQLModel):
-    id: int
-    title: str
-
-
-class CoursePreviewPublic(SQLModel):
-    course_id: int
-    title: str
-    description: str | None = None
-    progress_percent: float
-    category: CategoryPublic | None = None
 
 
 class TaskTreePublic(SQLModel):
@@ -129,48 +77,59 @@ class CourseTreePublic(SQLModel):
     modules: list[ModuleTreePublic]
 
 
+class EnrollCourseResponse(SQLModel):
+    message: str
+    course_id: int
+    user_id: int
+    status: str
+    progress_percent: float
+    xp_earned: int
+
+
 @router.get("/home", response_model=HomeCoursesResponse)
 def get_home_courses(
     session: Session = Depends(get_session),
     user_id: int = Depends(get_current_user_id),
 ):
     courses = session.exec(
-        select(Course)
-        .where(Course.is_published.is_(True))
-        .order_by(Course.id)
+        select(Course).where(Course.is_published.is_(True)).order_by(Course.id)
     ).all()
 
     user_courses = session.exec(
-        select(UserCourse)
-        .where(UserCourse.user_id == user_id)
-        .order_by(UserCourse.id)
+        select(UserCourse).where(UserCourse.user_id == user_id).order_by(UserCourse.id)
     ).all()
 
-    progress_map = {
-        user_course.course_id: user_course.progress_percent
-        for user_course in user_courses
-    }
+    progress_map: dict[int, float] = {}
+    for user_course in user_courses:
+        progress_map[user_course.course_id] = recalculate_user_course_progress(
+            session=session,
+            user_id=user_id,
+            course_id=user_course.course_id,
+        )
+
+    session.commit()
 
     all_courses_result = []
     my_courses_result = []
 
     for course in courses:
-        preview = CoursePreviewPublic(
-            course_id=course.id,
-            title=course.title,
-            description=course.description,
-            progress_percent=progress_map.get(course.id, 0),
-            category=CategoryPublic(
-                id=course.category.id,
-                title=course.category.title,
-            ) if course.category else None,
+        all_courses_result.append(
+            CoursePreviewPublic(
+                course_id=course.id,
+                title=course.title,
+                description=course.description,
+                progress_percent=progress_map.get(course.id, 0),
+                category=CategoryPublic(
+                    id=course.category.id,
+                    title=course.category.title,
+                )
+                if course.category
+                else None,
+            )
         )
-
-        all_courses_result.append(preview)
 
     for user_course in user_courses:
         course = user_course.course
-
         if not course or not course.is_published:
             continue
 
@@ -179,11 +138,13 @@ def get_home_courses(
                 course_id=course.id,
                 title=course.title,
                 description=course.description,
-                progress_percent=user_course.progress_percent,
+                progress_percent=progress_map.get(course.id, user_course.progress_percent),
                 category=CategoryPublic(
                     id=course.category.id,
                     title=course.category.title,
-                ) if course.category else None,
+                )
+                if course.category
+                else None,
             )
         )
 
@@ -205,7 +166,6 @@ def get_course_by_id(
             Course.is_published.is_(True),
         )
     ).first()
-
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -219,32 +179,31 @@ def get_course_by_id(
         )
     ).first()
 
+    progress_percent = None
+    if user_course:
+        progress_percent = recalculate_user_course_progress(
+            session=session,
+            user_id=user_id,
+            course_id=course_id,
+        )
+        session.commit()
+
     return CourseDetailPublic(
         id=course.id,
         title=course.title,
         description=course.description,
         is_published=course.is_published,
         category_id=course.category_id,
-        progress_percent=user_course.progress_percent if user_course else None,
+        progress_percent=progress_percent,
         created_at=course.created_at,
         updated_at=course.updated_at,
         category=CategoryPublic(
             id=course.category.id,
             title=course.category.title,
-        ) if course.category else None,
+        )
+        if course.category
+        else None,
     )
-
-
-
-
-
-class EnrollCourseResponse(SQLModel):
-    message: str
-    course_id: int
-    user_id: int
-    status: str
-    progress_percent: float
-    xp_earned: int
 
 
 @router.post("/{course_id}/enroll", response_model=EnrollCourseResponse)
@@ -259,7 +218,6 @@ def enroll_course(
             Course.is_published.is_(True),
         )
     ).first()
-
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -272,7 +230,6 @@ def enroll_course(
             UserCourse.course_id == course_id,
         )
     ).first()
-
     if existing_user_course:
         return EnrollCourseResponse(
             message="User already enrolled in course",
@@ -290,7 +247,6 @@ def enroll_course(
         progress_percent=0,
         xp_earned=0,
     )
-
     session.add(user_course)
     session.commit()
     session.refresh(user_course)
@@ -317,7 +273,6 @@ def get_course_tree(
             Course.is_published.is_(True),
         )
     ).first()
-
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -331,6 +286,15 @@ def get_course_tree(
         )
     ).first()
 
+    progress_percent = None
+    if user_course:
+        progress_percent = recalculate_user_course_progress(
+            session=session,
+            user_id=user_id,
+            course_id=course_id,
+        )
+        session.commit()
+
     modules = session.exec(
         select(Module)
         .where(Module.course_id == course_id)
@@ -338,7 +302,6 @@ def get_course_tree(
     ).all()
 
     modules_result = []
-
     for module in modules:
         topics = session.exec(
             select(Topic)
@@ -347,7 +310,6 @@ def get_course_tree(
         ).all()
 
         topics_result = []
-
         for topic in topics:
             tasks = session.exec(
                 select(Task)
@@ -358,28 +320,24 @@ def get_course_tree(
                 .order_by(Task.order_index, Task.id)
             ).all()
 
-            tasks_result = []
-
-            for task in tasks:
-                tasks_result.append(
-                    TaskTreePublic(
-                        id=task.id,
-                        title=task.title,
-                        description=task.description,
-                        task_type=task.task_type,
-                        order_index=task.order_index,
-                        xp_reward=task.xp_reward,
-                        is_published=task.is_published,
-                    )
-                )
-
             topics_result.append(
                 TopicTreePublic(
                     id=topic.id,
                     title=topic.title,
                     description=topic.description,
                     order_index=topic.order_index,
-                    tasks=tasks_result,
+                    tasks=[
+                        TaskTreePublic(
+                            id=task.id,
+                            title=task.title,
+                            description=task.description,
+                            task_type=task.task_type,
+                            order_index=task.order_index,
+                            xp_reward=task.xp_reward,
+                            is_published=task.is_published,
+                        )
+                        for task in tasks
+                    ],
                 )
             )
 
@@ -398,10 +356,12 @@ def get_course_tree(
         title=course.title,
         description=course.description,
         is_published=course.is_published,
-        progress_percent=user_course.progress_percent if user_course else None,
+        progress_percent=progress_percent,
         category=CategoryPublic(
             id=course.category.id,
             title=course.category.title,
-        ) if course.category else None,
+        )
+        if course.category
+        else None,
         modules=modules_result,
     )

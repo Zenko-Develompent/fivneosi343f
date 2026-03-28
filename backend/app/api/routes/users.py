@@ -1,23 +1,22 @@
-from sqlmodel import Session, select
-from sqlmodel import Field, Relationship, SQLModel
-from app.core.db import get_session
-from app.models.models import Role, User
-from app.services.auth import create_tokens, refresh_user_id
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
 from datetime import datetime
-from app.models.models import AchievementUser
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Field, SQLModel, Session, select
+
 from app.core.db import get_session
 from app.core.security import (
     create_tokens,
     get_current_user_id,
+    hash_password,
     refresh_user_id,
     verify_password,
-    hash_password,
 )
-from app.models.models import User, UserCourse
+from app.models.models import AchievementUser, Role, User, UserCourse
+from app.services.course_progress import recalculate_user_course_progress
+from app.services.give_achievement import check_and_award_level_achievements
 
 router = APIRouter(prefix="/users", tags=["users"])
+
 
 class UserAchievementPublic(SQLModel):
     id: int
@@ -26,6 +25,7 @@ class UserAchievementPublic(SQLModel):
     icon_url: str | None = None
     xp_reward: int
     received_at: datetime
+
 
 class CategoryPublic(SQLModel):
     id: int
@@ -54,7 +54,6 @@ class UserPublic(SQLModel):
     courses: list[MyCoursePublic] = Field(default_factory=list)
 
 
-
 class UserRegister(SQLModel):
     first_name: str
     last_name: str | None = None
@@ -67,34 +66,21 @@ class UserLogin(SQLModel):
     password: str
 
 
-class UserPublic(SQLModel):
+class RolePublic(SQLModel):
     id: int
-    first_name: str
-    last_name: str | None = None
-    mail: str
-    level: int
-    total_xp: int
-    role_id: int
-
-
+    name: str
 
 
 @router.post("/register")
 def register_user(payload: UserRegister, session: Session = Depends(get_session)):
-    existing_user = session.exec(
-        select(User).where(User.mail == payload.mail)
-    ).first()
-
+    existing_user = session.exec(select(User).where(User.mail == payload.mail)).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exists",
         )
 
-    user_role = session.exec(
-        select(Role).where(Role.name == "user")
-    ).first()
-
+    user_role = session.exec(select(Role).where(Role.name == "user")).first()
     if not user_role:
         user_role = Role(name="user")
         session.add(user_role)
@@ -108,21 +94,15 @@ def register_user(payload: UserRegister, session: Session = Depends(get_session)
         password=hash_password(payload.password),
         role_id=user_role.id,
     )
-
     session.add(new_user)
     session.commit()
     session.refresh(new_user)
-
     return new_user
-
 
 
 @router.post("/login")
 def login(payload: UserLogin, session: Session = Depends(get_session)):
-    user = session.exec(
-        select(User).where(User.mail == payload.mail)
-    ).first()
-
+    user = session.exec(select(User).where(User.mail == payload.mail)).first()
     if not user or not verify_password(payload.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -130,13 +110,10 @@ def login(payload: UserLogin, session: Session = Depends(get_session)):
         )
 
     access_token, refresh_token = create_tokens(user.id)
-
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
     }
-
-
 
 
 @router.get("/me", response_model=UserPublic)
@@ -145,22 +122,28 @@ def get_my_profile(
     session: Session = Depends(get_session),
 ):
     user = session.get(User, user_id)
-
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
 
-    user_courses = session.exec(
-        select(UserCourse).where(UserCourse.user_id == user_id)
-    ).all()
+    check_and_award_level_achievements(session=session, user=user)
 
-    courses = []
+    user_courses = session.exec(select(UserCourse).where(UserCourse.user_id == user_id)).all()
+    progress_map: dict[int, float] = {}
+    for user_course in user_courses:
+        progress_map[user_course.course_id] = recalculate_user_course_progress(
+            session=session,
+            user_id=user_id,
+            course_id=user_course.course_id,
+        )
 
+    session.commit()
+
+    courses: list[MyCoursePublic] = []
     for user_course in user_courses:
         course = user_course.course
-
         if not course or not course.is_published:
             continue
 
@@ -170,13 +153,15 @@ def get_my_profile(
                 title=course.title,
                 description=course.description,
                 is_published=course.is_published,
-                progress_percent=user_course.progress_percent,
+                progress_percent=progress_map.get(course.id, user_course.progress_percent),
                 xp_earned=user_course.xp_earned,
                 status=user_course.status.value,
                 category=CategoryPublic(
                     id=course.category.id,
                     title=course.category.title,
-                ) if course.category else None,
+                )
+                if course.category
+                else None,
             )
         )
 
@@ -192,8 +177,6 @@ def get_my_profile(
     )
 
 
-
-
 @router.get("/refresh")
 def refresh_user(user_id: int = Depends(refresh_user_id)):
     access_token, refresh_token = create_tokens(user_id)
@@ -203,18 +186,9 @@ def refresh_user(user_id: int = Depends(refresh_user_id)):
     }
 
 
-class RolePublic(SQLModel):
-    id: int
-    name: str
-
-
 @router.get("/roles", response_model=list[RolePublic])
 def get_roles(session: Session = Depends(get_session)):
-    roles = session.exec(
-        select(Role).order_by(Role.id)
-    ).all()
-
-    return roles
+    return session.exec(select(Role).order_by(Role.id)).all()
 
 
 @router.get("/me/achievements", response_model=list[UserAchievementPublic])
@@ -222,17 +196,25 @@ def get_my_achievements(
     user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    check_and_award_level_achievements(session=session, user=user)
+    session.commit()
+
     achievement_links = session.exec(
         select(AchievementUser)
         .where(AchievementUser.user_id == user_id)
         .order_by(AchievementUser.created_at.desc())
     ).all()
 
-    result = []
-
+    result: list[UserAchievementPublic] = []
     for link in achievement_links:
         achievement = link.achievement
-
         if not achievement:
             continue
 

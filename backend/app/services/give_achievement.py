@@ -1,103 +1,99 @@
 from sqlmodel import Session, select
-from app.models.models import User, Achievement, AchievementUser
 
-def give_achievement_if_not_exists(
-    session: Session,
-    user_id: int,
-    achievement_title: str,
-) -> Achievement | None:
-    achievement = session.exec(
-        select(Achievement).where(
-            Achievement.title == achievement_title,
-            Achievement.is_active.is_(True),
-        )
-    ).first()
+from app.models.models import Achievement, AchievementUser, User
 
-    if not achievement:
-        return None
 
-    existing_link = session.exec(
-        select(AchievementUser).where(
-            AchievementUser.user_id == user_id,
-            AchievementUser.achievement_id == achievement.id,
-        )
-    ).first()
+LEVEL_ACHIEVEMENTS: tuple[dict[str, int | str], ...] = (
+    {
+        "level": 1,
+        "title": "Уровень 1",
+        "description": "Достигнут 1 уровень",
+    },
+    {
+        "level": 5,
+        "title": "Уровень 5",
+        "description": "Достигнут 5 уровень",
+    },
+    {
+        "level": 10,
+        "title": "Уровень 10",
+        "description": "Достигнут 10 уровень",
+    },
+)
 
-    if existing_link:
-        return None
 
-    link = AchievementUser(
-        user_id=user_id,
-        achievement_id=achievement.id,
-    )
-    session.add(link)
+def ensure_level_achievements(session: Session) -> list[tuple[int, Achievement]]:
+    result: list[tuple[int, Achievement]] = []
 
-    return achievement
+    for item in LEVEL_ACHIEVEMENTS:
+        level = int(item["level"])
+        title = str(item["title"])
+        description = str(item["description"])
 
-def give_achievement_if_not_exists(
-    session: Session,
-    user_id: int,
-    achievement_title: str,
-) -> Achievement | None:
-    achievement = session.exec(
-        select(Achievement).where(
-            Achievement.title == achievement_title,
-            Achievement.is_active.is_(True),
-        )
-    ).first()
+        achievement = session.exec(
+            select(Achievement).where(Achievement.title == title)
+        ).first()
 
-    if not achievement:
-        return None
+        if not achievement:
+            achievement = Achievement(
+                title=title,
+                description=description,
+                # frontend card currently uses xp_reward as badge value
+                xp_reward=level,
+                is_active=True,
+                condition_value=level,
+            )
+        else:
+            achievement.description = description
+            achievement.xp_reward = level
+            achievement.is_active = True
+            achievement.condition_value = level
 
-    existing_link = session.exec(
-        select(AchievementUser).where(
-            AchievementUser.user_id == user_id,
-            AchievementUser.achievement_id == achievement.id,
-        )
-    ).first()
+        session.add(achievement)
+        session.flush()
+        result.append((level, achievement))
 
-    if existing_link:
-        return None
+    return result
 
-    link = AchievementUser(
-        user_id=user_id,
-        achievement_id=achievement.id,
-    )
-    session.add(link)
-
-    return achievement
 
 def check_and_award_level_achievements(
     session: Session,
     user: User,
 ) -> list[Achievement]:
-    awarded = []
+    level_achievements = ensure_level_achievements(session)
+    eligible_ids = [
+        achievement.id
+        for required_level, achievement in level_achievements
+        if user.level >= required_level
+    ]
 
-    if user.level >= 2:
-        achievement = give_achievement_if_not_exists(
-            session=session,
-            user_id=user.id,
-            achievement_title="Level 2 reached",
-        )
-        if achievement:
-            awarded.append(achievement)
+    if not eligible_ids:
+        return []
 
-    if user.level >= 3:
-        achievement = give_achievement_if_not_exists(
-            session=session,
-            user_id=user.id,
-            achievement_title="Level 3 reached",
-        )
-        if achievement:
-            awarded.append(achievement)
+    owned_ids = set(
+        session.exec(
+            select(AchievementUser.achievement_id).where(
+                AchievementUser.user_id == user.id,
+                AchievementUser.achievement_id.in_(eligible_ids),
+            )
+        ).all()
+    )
 
-    if user.level >= 5:
-        achievement = give_achievement_if_not_exists(
-            session=session,
-            user_id=user.id,
-            achievement_title="Level 5 reached",
+    awarded: list[Achievement] = []
+
+    for required_level, achievement in level_achievements:
+        if user.level < required_level:
+            continue
+
+        if achievement.id in owned_ids:
+            continue
+
+        session.add(
+            AchievementUser(
+                user_id=user.id,
+                achievement_id=achievement.id,
+            )
         )
-        if achievement:
-            awarded.append(achievement)
+        awarded.append(achievement)
 
     return awarded
