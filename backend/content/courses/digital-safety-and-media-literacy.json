@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0",
+  "category_title": "Цифровая грамотность",
+  "course": {
+    "title": "Цифровая безопасность и медиаграмотность",
+    "description": "Курс учит безопасно работать в интернете, распознавать мошеннические схемы и критически оценивать информацию в сети.",
+    "audience": "11-16 лет",
+    "outcomes": [
+      "Создает надежные пароли и использует двухфакторную аутентификацию",
+      "Распознает фишинговые письма и подозрительные ссылки",
+      "Проверяет источники и отличает факты от мнений",
+      "Понимает, как формируется цифровой след и как его контролировать",
+      "Составляет личный план цифровой безопасности"
+    ],
+    "is_published": true
+  },
+  "modules": [
+    {
+      "order_index": 1,
+      "title": "Модуль 1. Безопасность аккаунтов",
+      "description": "Практические навыки защиты учетных записей и устройств.",
+      "topics": [
+        {
+          "order_index": 1,
+          "title": "Тема 1. Пароли и 2FA",
+          "description": "Каким должен быть надежный пароль и как включить дополнительную защиту входа.",
+          "tasks": [
+            {
+              "order_index": 1,
+              "task_type": "lecture",
+              "title": "Лекция: сильные пароли и менеджеры паролей",
+              "description": "Критерии сильного пароля, типичные ошибки и базовые правила хранения паролей.",
+              "xp_reward": 0,
+              "correct_answers": null,
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-1/topic-1/task-1.md"
+            },
+            {
+              "order_index": 2,
+              "task_type": "practice",
+              "title": "Практика: аудит своих паролей по чеклисту",
+              "description": "Оцени 3 аккаунта по критериям безопасности и составь план улучшений (длина, уникальность, 2FA).",
+              "xp_reward": 30,
+              "correct_answers": "[\"длина не менее 12\", \"уникальный пароль\", \"2fa\"]",
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-1/topic-1/task-2.md"
+            },
+            {
+              "order_index": 3,
+              "task_type": "quiz",
+              "title": "Квиз: надежность учетных данных",
+              "description": "Проверка принципов создания паролей и защиты входа.",
+              "xp_reward": 20,
+              "correct_answers": "[\"12\", \"2fa\", \"уникальный пароль\", \"менеджер паролей\"]",
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-1/topic-1/task-3.md"
+            }
+          ]
+        },
+        {
+          "order_index": 2,
+          "title": "Тема 2. Фишинг и социальная инженерия",
+          "description": "Как распознавать попытки обмана через письма, мессенджеры и сайты-клоны.",
+          "tasks": [
+            {
+              "order_index": 1,
+              "task_type": "lecture",
+              "title": "Лекция: признаки фишинга",
+              "description": "Сигналы риска: срочность, ошибки в домене, просьба передать коды или пароли.",
+              "xp_reward": 0,
+              "correct_answers": null,
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-1/topic-2/task-1.md"
+            },
+            {
+              "order_index": 2,
+              "task_type": "practice",
+              "title": "Практика: разбор 5 подозрительных сообщений",
+              "description": "Определи, какие сообщения безопасны, а какие фишинговые, и обоснуй решение.",
+              "xp_reward": 35,
+              "correct_answers": "[\"проверка домена\", \"не передавать коды\", \"не открывать подозрительные ссылки\"]",
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-1/topic-2/task-2.md"
+            },
+            {
+              "order_index": 3,
+              "task_type": "quiz",
+              "title": "Квиз: антифишинговые правила",
+              "description": "Сценарные вопросы по безопасным действиям при подозрительных запросах.",
+              "xp_reward": 20,
+              "correct_answers": "[\"проверить отправителя\", \"не сообщать пароль\", \"войти через официальный сайт\"]",
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-1/topic-2/task-3.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order_index": 2,
+      "title": "Модуль 2. Медиаграмотность и приватность",
+      "description": "Критическая оценка информации и защита личных данных.",
+      "topics": [
+        {
+          "order_index": 1,
+          "title": "Тема 3. Проверка информации в сети",
+          "description": "Методы верификации фактов, источников и медиаконтента.",
+          "tasks": [
+            {
+              "order_index": 1,
+              "task_type": "lecture",
+              "title": "Лекция: фактчекинг и надежные источники",
+              "description": "Как отличать факт от мнения, проверять первоисточник и сравнивать несколько источников.",
+              "xp_reward": 0,
+              "correct_answers": null,
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-2/topic-1/task-1.md"
+            },
+            {
+              "order_index": 2,
+              "task_type": "practice",
+              "title": "Практика: проверка новости по чеклисту",
+              "description": "Проверь одну новость по критериям: источник, дата, подтверждение в независимых каналах.",
+              "xp_reward": 35,
+              "correct_answers": "[\"первоисточник\", \"дата публикации\", \"2+ независимых источника\"]",
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-2/topic-1/task-2.md"
+            },
+            {
+              "order_index": 3,
+              "task_type": "quiz",
+              "title": "Квиз: критическое мышление",
+              "description": "Проверка навыков распознавания манипуляций и недостоверных данных.",
+              "xp_reward": 20,
+              "correct_answers": "[\"проверка источника\", \"сравнение данных\", \"контекст публикации\"]",
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-2/topic-1/task-3.md"
+            }
+          ]
+        },
+        {
+          "order_index": 2,
+          "title": "Тема 4. Цифровой след и настройки приватности",
+          "description": "Что о нас остается в сети и как ограничить лишнюю публичность.",
+          "tasks": [
+            {
+              "order_index": 1,
+              "task_type": "lecture",
+              "title": "Лекция: цифровой след и приватность профиля",
+              "description": "Публичные данные, геометки, разрешения приложений и базовые настройки приватности.",
+              "xp_reward": 0,
+              "correct_answers": null,
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-2/topic-2/task-1.md"
+            },
+            {
+              "order_index": 2,
+              "task_type": "practice",
+              "title": "Практика: персональный план цифровой безопасности",
+              "description": "Составь 10 шагов: приватность аккаунтов, резервные контакты, контроль разрешений и безопасные публикации.",
+              "xp_reward": 40,
+              "correct_answers": "[\"ограничить видимость профиля\", \"отключить лишние разрешения\", \"резервная почта\", \"2fa\"]",
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-2/topic-2/task-2.md"
+            },
+            {
+              "order_index": 3,
+              "task_type": "quiz",
+              "title": "Квиз: безопасное поведение в сети",
+              "description": "Итоговый контроль по темам курса с практическими ситуациями.",
+              "xp_reward": 25,
+              "correct_answers": "[\"приватность\", \"проверка источников\", \"антифишинг\", \"безопасные настройки\"]",
+              "md_path": "content/tasks/digital-safety-and-media-literacy/module-2/topic-2/task-3.md"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

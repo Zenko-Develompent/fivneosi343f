@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0",
+  "category_title": "Программирование",
+  "course": {
+    "title": "Python: первые шаги и мини-проекты",
+    "description": "Курс для начинающих: от переменных и условий до циклов и функций. После курса ученик умеет писать простые программы, проверять ввод и собирать мини-проекты из нескольких шагов.",
+    "audience": "10-14 лет, без опыта программирования",
+    "outcomes": [
+      "Понимает базовые типы данных и умеет работать с переменными",
+      "Использует условия if/elif/else для принятия решений в программе",
+      "Применяет циклы for и while для повторяющихся действий",
+      "Пишет и использует собственные функции",
+      "Собирает простой консольный мини-проект"
+    ],
+    "is_published": true
+  },
+  "modules": [
+    {
+      "order_index": 1,
+      "title": "Модуль 1. Основы Python",
+      "description": "Базовый синтаксис, переменные, типы данных и условные конструкции.",
+      "topics": [
+        {
+          "order_index": 1,
+          "title": "Тема 1. Переменные и типы данных",
+          "description": "Что такое переменная, какие бывают типы данных и как выводить результат работы программы.",
+          "tasks": [
+            {
+              "order_index": 1,
+              "task_type": "lecture",
+              "title": "Лекция: переменные, int/float/str, print()",
+              "description": "Разбор правил именования переменных, примеры хранения текста и чисел, вывод результата через print().",
+              "xp_reward": 0,
+              "correct_answers": null,
+              "md_path": "content/tasks/python-first-steps/module-1/topic-1/task-1.md"
+            },
+            {
+              "order_index": 2,
+              "task_type": "practice",
+              "title": "Практика: мини-визитка пользователя",
+              "description": "Создай переменные name, age, city и выведи их в читаемом формате. Дополнительно: посчитай age_next_year = age + 1.",
+              "xp_reward": 30,
+              "correct_answers": "[\"name\", \"age\", \"city\", \"print\"]",
+              "md_path": "content/tasks/python-first-steps/module-1/topic-1/task-2.md"
+            },
+            {
+              "order_index": 3,
+              "task_type": "quiz",
+              "title": "Квиз: базовые типы данных",
+              "description": "Проверь понимание int, float, str и правил именования переменных.",
+              "xp_reward": 20,
+              "correct_answers": "[\"int\", \"float\", \"str\", \"имя переменной не может начинаться с цифры\"]",
+              "md_path": "content/tasks/python-first-steps/module-1/topic-1/task-3.md"
+            }
+          ]
+        },
+        {
+          "order_index": 2,
+          "title": "Тема 2. Условия и логика",
+          "description": "Сравнение значений и ветвление с помощью if/elif/else.",
+          "tasks": [
+            {
+              "order_index": 1,
+              "task_type": "lecture",
+              "title": "Лекция: операторы сравнения и if/else",
+              "description": "Операторы ==, !=, >, <, >=, <=, а также логические and/or/not на простых примерах.",
+              "xp_reward": 0,
+              "correct_answers": null,
+              "md_path": "content/tasks/python-first-steps/module-1/topic-2/task-1.md"
+            },
+            {
+              "order_index": 2,
+              "task_type": "practice",
+              "title": "Практика: проверка возраста",
+              "description": "Напиши программу, которая по возрасту определяет категорию: ребенок, подросток или взрослый.",
+              "xp_reward": 35,
+              "correct_answers": "[\"if\", \"elif\", \"else\"]",
+              "md_path": "content/tasks/python-first-steps/module-1/topic-2/task-2.md"
+            },
+            {
+              "order_index": 3,
+              "task_type": "quiz",
+              "title": "Квиз: логические условия",
+              "description": "Вопросы по корректному составлению условий и выбору ветки выполнения.",
+              "xp_reward": 20,
+              "correct_answers": "[\"==\", \"and\", \"or\", \"elif\"]",
+              "md_path": "content/tasks/python-first-steps/module-1/topic-2/task-3.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order_index": 2,
+      "title": "Модуль 2. Циклы и функции",
+      "description": "Повторяющиеся действия в коде и создание переиспользуемых блоков логики.",
+      "topics": [
+        {
+          "order_index": 1,
+          "title": "Тема 3. Циклы for и while",
+          "description": "Как автоматизировать повторяющиеся шаги программы.",
+          "tasks": [
+            {
+              "order_index": 1,
+              "task_type": "lecture",
+              "title": "Лекция: range(), for, while, break/continue",
+              "description": "Когда использовать for и while, как управлять циклом и избегать бесконечных повторений.",
+              "xp_reward": 0,
+              "correct_answers": null,
+              "md_path": "content/tasks/python-first-steps/module-2/topic-1/task-1.md"
+            },
+            {
+              "order_index": 2,
+              "task_type": "practice",
+              "title": "Практика: таблица умножения",
+              "description": "Выведи таблицу умножения для числа n от 1 до 10, используя цикл for.",
+              "xp_reward": 35,
+              "correct_answers": "[\"for\", \"range\", \"print\"]",
+              "md_path": "content/tasks/python-first-steps/module-2/topic-1/task-2.md"
+            },
+            {
+              "order_index": 3,
+              "task_type": "quiz",
+              "title": "Квиз: работа циклов",
+              "description": "Вопросы по количеству итераций, range() и условиям выхода из while.",
+              "xp_reward": 20,
+              "correct_answers": "[\"for\", \"while\", \"break\", \"continue\"]",
+              "md_path": "content/tasks/python-first-steps/module-2/topic-1/task-3.md"
+            }
+          ]
+        },
+        {
+          "order_index": 2,
+          "title": "Тема 4. Функции и финальный мини-проект",
+          "description": "Разбиение кода на функции и сборка итоговой программы.",
+          "tasks": [
+            {
+              "order_index": 1,
+              "task_type": "lecture",
+              "title": "Лекция: def, параметры и return",
+              "description": "Зачем нужны функции, как передавать аргументы и возвращать результат.",
+              "xp_reward": 0,
+              "correct_answers": null,
+              "md_path": "content/tasks/python-first-steps/module-2/topic-2/task-1.md"
+            },
+            {
+              "order_index": 2,
+              "task_type": "practice",
+              "title": "Практика: калькулятор с функциями",
+              "description": "Реализуй функции add, sub, mul, div и собери простой консольный калькулятор.",
+              "xp_reward": 40,
+              "correct_answers": "[\"def\", \"return\", \"add\", \"sub\", \"mul\", \"div\"]",
+              "md_path": "content/tasks/python-first-steps/module-2/topic-2/task-2.md"
+            },
+            {
+              "order_index": 3,
+              "task_type": "quiz",
+              "title": "Квиз: функции и структура программы",
+              "description": "Проверка понимания параметров, области видимости и возврата значения.",
+              "xp_reward": 25,
+              "correct_answers": "[\"def\", \"return\", \"аргумент\", \"параметр\"]",
+              "md_path": "content/tasks/python-first-steps/module-2/topic-2/task-3.md"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
