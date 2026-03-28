@@ -5,15 +5,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/header/header";
 import Sidebar from "@/components/sidebar/sidebar";
 import Button from "@/components/button/button";
+import FixCodeGame from "@/components/games/fixCode/fixCode";
+import GuessCodeGame from "@/components/games/guessCode/guessCode";
+import MemoryMatchGame from "@/components/games/memoryMatch/memoryMatch";
+import PythonCompiler from "@/components/pythonCompiler/pythonCompiler";
 import {
   ApiError,
   CourseTreePublic,
+  TaskAnswerResponse,
   TaskTreePublic,
+  completeTaskActivity,
   getApiErrorMessage,
   getCourseTree,
   submitTaskAnswer,
 } from "@/shared/api/client";
 import { getAccessToken } from "@/shared/auth/tokens";
+import { getLessonEnhancement } from "./lessonEnhancements";
 import styles from "./course.module.css";
 
 interface FlatLessonRef {
@@ -24,7 +31,6 @@ interface FlatLessonRef {
   themeSummary: string;
   lesson: TaskTreePublic;
   isFinal: boolean;
-  lessonType: "lecture" | "practice" | "quiz";
 }
 
 type MessageTone = "default" | "success" | "error";
@@ -48,7 +54,6 @@ function flattenLessons(program: CourseTreePublic): FlatLessonRef[] {
           themeSummary: theme.description ?? "",
           lesson,
           isFinal: isFinalTask(lesson),
-          lessonType: lesson.task_type,
         });
       }
     }
@@ -71,16 +76,18 @@ function CourseTheoryPageContent() {
   const [selectedLessonId, setSelectedLessonId] = useState<string>("");
   const [courseTree, setCourseTree] = useState<CourseTreePublic | null>(null);
   const [sessionCompletedIds, setSessionCompletedIds] = useState<number[]>([]);
-  const [answerByTaskId, setAnswerByTaskId] = useState<Record<number, string>>({});
+  const [selectedOptionByTaskId, setSelectedOptionByTaskId] = useState<Record<number, string>>(
+    {}
+  );
   const [progressPercent, setProgressPercent] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<MessageTone>("default");
+
   const lessons = useMemo(() => (courseTree ? flattenLessons(courseTree) : []), [courseTree]);
 
   useEffect(() => {
     const token = getAccessToken();
-
     if (!token) {
       router.replace("/login");
     }
@@ -113,7 +120,7 @@ function CourseTheoryPageContent() {
         setCourseTree(response);
         setProgressPercent(response.progress_percent ?? 0);
         setSessionCompletedIds([]);
-        setAnswerByTaskId({});
+        setSelectedOptionByTaskId({});
         setSelectedLessonId("");
         setMessage("");
       } catch (error) {
@@ -141,10 +148,7 @@ function CourseTheoryPageContent() {
     };
   }, [courseId, router]);
 
-  const sessionCompletedSet = useMemo(
-    () => new Set(sessionCompletedIds),
-    [sessionCompletedIds]
-  );
+  const sessionCompletedSet = useMemo(() => new Set(sessionCompletedIds), [sessionCompletedIds]);
 
   const unlockedByLessonId = useMemo(() => {
     const unlocked = new Map<string, boolean>();
@@ -220,12 +224,99 @@ function CourseTheoryPageContent() {
     return index >= 0 ? index + 1 : 1;
   }, [activeThemeLessons, currentLessonRef]);
 
+  const lessonEnhancement = useMemo(() => {
+    if (!activeLesson) {
+      return null;
+    }
+
+    return getLessonEnhancement(courseTree?.category?.title, activeLesson);
+  }, [activeLesson, courseTree?.category?.title]);
+
   const handleWrongLesson = (customMessage?: string) => {
     setMessageTone("error");
-    setMessage(customMessage ?? "Ответ неверный. Попробуй ещё раз.");
+    setMessage(customMessage ?? "Неверно. Попробуй ещё раз.");
   };
 
-  const handleCheckAnswer = async () => {
+  const pushXpEvent = (totalXp: number, deltaXp: number) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("profile:xp-updated", {
+        detail: {
+          totalXp,
+          deltaXp,
+        },
+      })
+    );
+  };
+
+  const handleSuccessResult = (response: TaskAnswerResponse, baseMessage: string) => {
+    setProgressPercent(response.progress_percent);
+    setSessionCompletedIds((prev) =>
+      activeLesson && !prev.includes(activeLesson.id) ? [...prev, activeLesson.id] : prev
+    );
+
+    if (response.awarded_xp > 0) {
+      pushXpEvent(response.total_xp, response.awarded_xp);
+      setMessageTone("success");
+      setMessage(`${baseMessage} +${response.awarded_xp} XP.`);
+      return;
+    }
+
+    setMessageTone("success");
+    setMessage(`${baseMessage} Урок уже был засчитан раньше.`);
+  };
+
+  const handleSingleQuestionCheck = async () => {
+    if (!activeLesson || !lessonEnhancement?.singleQuestion) {
+      return;
+    }
+
+    if (!isActiveUnlocked) {
+      handleWrongLesson("Сначала пройди предыдущие уроки.");
+      return;
+    }
+
+    const selectedOptionId = selectedOptionByTaskId[activeLesson.id] ?? "";
+    if (!selectedOptionId) {
+      handleWrongLesson("Выбери ответ.");
+      return;
+    }
+
+    const selectedOption = lessonEnhancement.singleQuestion.options.find(
+      (option) => option.id === selectedOptionId
+    );
+
+    if (!selectedOption) {
+      handleWrongLesson("Выбери ответ.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await submitTaskAnswer(activeLesson.id, selectedOption.label);
+
+      if (!response.is_correct) {
+        handleWrongLesson("Неверно. Попробуй ещё раз.");
+        setProgressPercent(response.progress_percent);
+        return;
+      }
+
+      handleSuccessResult(response, "Верно.");
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        router.replace("/login");
+        return;
+      }
+      handleWrongLesson(getApiErrorMessage(error, "Не удалось проверить ответ."));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCompleteActivity = async () => {
     if (!activeLesson) {
       return;
     }
@@ -235,45 +326,16 @@ function CourseTheoryPageContent() {
       return;
     }
 
-    if (activeLesson.task_type === "lecture") {
-      setMessageTone("default");
-      setMessage("Это теоретический урок, переходи к следующему шагу.");
-      return;
-    }
-
-    const answer = (answerByTaskId[activeLesson.id] ?? "").trim();
-    if (!answer) {
-      handleWrongLesson("Введи ответ перед проверкой.");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
-      const response = await submitTaskAnswer(activeLesson.id, answer);
-      setProgressPercent(response.progress_percent);
-
-      if (response.is_correct) {
-        setSessionCompletedIds((prev) =>
-          prev.includes(activeLesson.id) ? prev : [...prev, activeLesson.id]
-        );
-
-        if (response.awarded_xp > 0) {
-          setMessageTone("success");
-          setMessage(`Верно. +${response.awarded_xp} XP.`);
-        } else {
-          setMessageTone("success");
-          setMessage("Верно. Ответ уже был засчитан ранее, XP повторно не начисляются.");
-        }
-        return;
-      }
-
-      handleWrongLesson("Ответ неверный. Попробуй ещё раз.");
+      const response = await completeTaskActivity(activeLesson.id);
+      handleSuccessResult(response, "Урок засчитан.");
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         router.replace("/login");
         return;
       }
-      handleWrongLesson(getApiErrorMessage(error, "Не удалось отправить ответ."));
+      handleWrongLesson(getApiErrorMessage(error, "Не удалось завершить урок."));
     } finally {
       setIsSubmitting(false);
     }
@@ -286,7 +348,7 @@ function CourseTheoryPageContent() {
     );
 
     if (!firstUnlocked) {
-      handleWrongLesson("Тема пока заблокирована. Сначала пройди предыдущие уроки.");
+      handleWrongLesson("Тема пока заблокирована.");
       return;
     }
 
@@ -296,7 +358,7 @@ function CourseTheoryPageContent() {
 
   const handleLessonSelect = (_themeId: string, lessonId: string) => {
     if (!unlockedByLessonId.get(lessonId)) {
-      handleWrongLesson("Урок пока заблокирован. Сначала пройди предыдущие.");
+      handleWrongLesson("Урок пока заблокирован.");
       return;
     }
 
@@ -329,7 +391,10 @@ function CourseTheoryPageContent() {
     totalRequiredSteps > 0
       ? Math.min(
           totalRequiredSteps,
-          Math.max(Math.round((progressPercent / 100) * totalRequiredSteps), sessionCompletedIds.length)
+          Math.max(
+            Math.round((progressPercent / 100) * totalRequiredSteps),
+            sessionCompletedIds.length
+          )
         )
       : 0;
 
@@ -337,9 +402,7 @@ function CourseTheoryPageContent() {
     return (
       <div>
         <Header />
-        <main className={styles.emptyState}>
-          Загружаем курс...
-        </main>
+        <main className={styles.emptyState}>Загружаем курс...</main>
       </div>
     );
   }
@@ -353,7 +416,7 @@ function CourseTheoryPageContent() {
     );
   }
 
-  if (!courseTree || !currentLessonRef || !activeLesson) {
+  if (!courseTree || !currentLessonRef || !activeLesson || !lessonEnhancement) {
     return (
       <div>
         <Header />
@@ -370,6 +433,18 @@ function CourseTheoryPageContent() {
       : messageTone === "error"
         ? styles.messageError
         : styles.messageDefault;
+
+  const interactionLabel =
+    lessonEnhancement.interactionType === "game"
+      ? "Игра"
+      : lessonEnhancement.interactionType === "compiler"
+        ? "Компилятор"
+        : "Один вопрос";
+
+  const showCompleteButton =
+    activeLesson.task_type !== "lecture" &&
+    (lessonEnhancement.interactionType === "game" ||
+      lessonEnhancement.interactionType === "compiler");
 
   return (
     <div>
@@ -416,13 +491,13 @@ function CourseTheoryPageContent() {
               Шаг {currentThemeStep} из {activeThemeLessons.length}
             </div>
             <div className={styles.stepBannerBottom}>
-                <div className={styles.stepSegments}>
-                  {activeThemeLessons.map((lessonRef, index) => (
-                    <span
-                      key={lessonRef.lesson.id}
-                      className={`${styles.stepSegment} ${
-                        index + 1 === currentThemeStep ? styles.stepSegmentActive : ""
-                      }`.trim()}
+              <div className={styles.stepSegments}>
+                {activeThemeLessons.map((lessonRef, index) => (
+                  <span
+                    key={lessonRef.lesson.id}
+                    className={`${styles.stepSegment} ${
+                      index + 1 === currentThemeStep ? styles.stepSegmentActive : ""
+                    }`.trim()}
                   />
                 ))}
               </div>
@@ -439,59 +514,109 @@ function CourseTheoryPageContent() {
           <p className={styles.themeSummary}>{currentLessonRef.themeSummary}</p>
 
           <div className={styles.lessonMeta}>
-            <span className={styles.lessonBadge}>
-              Формат: {activeLesson.task_type === "lecture" ? "Теория" : "Проверка ответа"}
-            </span>
+            <span className={styles.lessonBadge}>Формат: {interactionLabel}</span>
             <span className={styles.lessonBadge}>Награда: {activeLesson.xp_reward} XP</span>
-            {currentLessonRef.isFinal && (
-              <span className={styles.lessonBadge}>Итоговый тест</span>
-            )}
             {isCompleted && <span className={styles.lessonBadgeDone}>Урок уже пройден</span>}
           </div>
 
           <div className={styles.practiceStack}>
-            {activeLesson.task_type !== "lecture" ? (
-              <section className={styles.quizBlock}>
-                <h2 className={styles.quizTitle}>
-                  {currentLessonRef.isFinal ? "Итоговое тестирование" : "Проверка урока"}
-                </h2>
-                {!isActiveUnlocked && (
-                  <p className={styles.quizSummary}>
-                    Урок заблокирован. Сначала пройди предыдущие темы.
-                  </p>
+            {lessonEnhancement.interactionType === "singleQuestion" &&
+              lessonEnhancement.singleQuestion && (
+                <section className={styles.quizBlock}>
+                  <h2 className={styles.quizTitle}>Один простой вопрос</h2>
+                  <p className={styles.quizSummary}>{lessonEnhancement.singleQuestion.prompt}</p>
+
+                  <div className={styles.singleQuestionOptions}>
+                    {lessonEnhancement.singleQuestion.options.map((option) => (
+                      <label key={option.id} className={styles.singleQuestionOption}>
+                        <input
+                          type="radio"
+                          name={`single-question-${activeLesson.id}`}
+                          checked={selectedOptionByTaskId[activeLesson.id] === option.id}
+                          onChange={() =>
+                            setSelectedOptionByTaskId((prev) => ({
+                              ...prev,
+                              [activeLesson.id]: option.id,
+                            }))
+                          }
+                          disabled={!isActiveUnlocked || isSubmitting}
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className={styles.quizActions}>
+                    <Button
+                      size="m"
+                      variant="filled"
+                      color="logo"
+                      title={isSubmitting ? "Проверяем..." : "Проверить"}
+                      onClick={() => void handleSingleQuestionCheck()}
+                      disabled={!isActiveUnlocked || isSubmitting}
+                    />
+                  </div>
+                </section>
+              )}
+
+            {lessonEnhancement.interactionType === "game" && (
+              <section className={styles.gameBlock}>
+                <h2 className={styles.quizTitle}>{lessonEnhancement.gameTitle}</h2>
+                <p className={styles.gameDescription}>{lessonEnhancement.gameDescription}</p>
+
+                {lessonEnhancement.gameType === "memoryMatch" &&
+                  lessonEnhancement.memoryPairs &&
+                  lessonEnhancement.memoryPairs.length > 0 && (
+                    <MemoryMatchGame pairs={lessonEnhancement.memoryPairs} />
+                  )}
+
+                {lessonEnhancement.gameType === "guessCode" &&
+                  lessonEnhancement.guessCodeQuestions &&
+                  lessonEnhancement.guessCodeQuestions.length > 0 && (
+                    <GuessCodeGame questions={lessonEnhancement.guessCodeQuestions} />
+                  )}
+
+                {lessonEnhancement.gameType === "fixCode" &&
+                  lessonEnhancement.fixCodeTasks &&
+                  lessonEnhancement.fixCodeTasks.length > 0 && (
+                    <FixCodeGame tasks={lessonEnhancement.fixCodeTasks} />
+                  )}
+
+                {showCompleteButton && (
+                  <div className={styles.activityActions}>
+                    <Button
+                      size="m"
+                      variant="filled"
+                      color="logo"
+                      title={isSubmitting ? "Сохраняем..." : "Завершить урок"}
+                      onClick={() => void handleCompleteActivity()}
+                      disabled={!isActiveUnlocked || isSubmitting}
+                    />
+                  </div>
                 )}
-                <p className={styles.quizSummary}>
-                  Введи ответ в свободной форме и отправь на проверку.
-                </p>
-                <textarea
-                  className={styles.answerInput}
-                  value={answerByTaskId[activeLesson.id] ?? ""}
-                  onChange={(event) =>
-                    setAnswerByTaskId((prev) => ({
-                      ...prev,
-                      [activeLesson.id]: event.target.value,
-                    }))
-                  }
-                  placeholder="Введи ответ..."
-                  disabled={!isActiveUnlocked || isSubmitting}
-                />
-                <div className={styles.quizActions}>
-                  <Button
-                    size="m"
-                    variant="filled"
-                    color="logo"
-                    title={isSubmitting ? "Проверяем..." : "Проверить ответ"}
-                    onClick={() => void handleCheckAnswer()}
-                    disabled={!isActiveUnlocked || isSubmitting}
-                  />
-                </div>
               </section>
-            ) : (
+            )}
+
+            {lessonEnhancement.interactionType === "compiler" && (
               <section className={styles.quizBlock}>
-                <h2 className={styles.quizTitle}>Теоретический материал</h2>
-                <p className={styles.quizSummary}>
-                  Для лекции ответ не требуется. Нажми «Дальше», чтобы перейти к практике.
-                </p>
+                <h2 className={styles.quizTitle}>{lessonEnhancement.compilerTitle}</h2>
+                <PythonCompiler
+                  title={lessonEnhancement.compilerTitle}
+                  initialCode={lessonEnhancement.compilerInitialCode}
+                />
+
+                {showCompleteButton && (
+                  <div className={styles.activityActions}>
+                    <Button
+                      size="m"
+                      variant="filled"
+                      color="logo"
+                      title={isSubmitting ? "Сохраняем..." : "Завершить урок"}
+                      onClick={() => void handleCompleteActivity()}
+                      disabled={!isActiveUnlocked || isSubmitting}
+                    />
+                  </div>
+                )}
               </section>
             )}
           </div>

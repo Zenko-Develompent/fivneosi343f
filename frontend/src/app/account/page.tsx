@@ -26,20 +26,11 @@ import {
   getMyProfile,
 } from "@/shared/api/client";
 import { clearTokens, getAccessToken } from "@/shared/auth/tokens";
+import { getCourseColorByCategory } from "@/shared/lib/courseColor";
 import styles from "./account.module.css";
 
 const XP_PER_LEVEL = 100;
 const fallbackAchievementImages = [AchivGold.src, AchivSilver.src, AchivBronze.src];
-
-function getCourseColor(category: string, index: number): "blue" | "orange" {
-  const normalized = category.toLowerCase();
-
-  if (normalized.includes("цифр") || normalized.includes("digital")) {
-    return "orange";
-  }
-
-  return index % 2 === 0 ? "blue" : "orange";
-}
 
 function mapProfileCourse(course: UserCoursePublic): CoursePreviewPublic {
   return {
@@ -201,7 +192,7 @@ export default function AccountPage() {
                 title={achievement.title}
                 image={getAchievementImage(achievement.icon_url, index)}
                 alt={achievement.title}
-                level={achievement.xp_reward}
+                level={achievement.condition_value ?? achievement.xp_reward}
                 className={ownedAchievementIds.has(achievement.id) ? "" : styles.grayscaleAchievement}
               />
             ))}
@@ -212,13 +203,13 @@ export default function AccountPage() {
           <h2 className={styles.sectionTitle}>Продолжить обучение</h2>
 
           <div className={styles.coursesGrid}>
-            {myCourses.map((course, index) => (
+            {myCourses.map((course) => (
               <Card
                 key={course.course_id}
                 category={course.category?.title ?? "Без категории"}
                 title={course.title}
                 description={`Прогресс: ${Math.round(course.progress_percent)}%`}
-                color={getCourseColor(course.category?.title ?? "", index)}
+                color={getCourseColorByCategory(course.category?.title ?? "")}
                 progress={course.progress_percent}
                 progressLabel="Прогресс курса"
                 buttonHref={`/courses/${course.course_id}`}

@@ -18,21 +18,8 @@ import {
   getHomeCourses,
 } from "@/shared/api/client";
 import { getAccessToken } from "@/shared/auth/tokens";
+import { getCourseColorByCategory } from "@/shared/lib/courseColor";
 import styles from "./coursePage.module.css";
-
-function getToneByCategory(categoryTitle?: string): "blue" | "orange" {
-  if (!categoryTitle) {
-    return "blue";
-  }
-
-  const normalized = categoryTitle.toLowerCase();
-
-  if (normalized.includes("цифр") || normalized.includes("digital")) {
-    return "orange";
-  }
-
-  return "blue";
-}
 
 export default function CoursePage() {
   const router = useRouter();
@@ -140,7 +127,7 @@ export default function CoursePage() {
     };
   }, [courseId, router]);
 
-  const tone = getToneByCategory(course?.category?.title ?? fallbackCourse?.category?.title ?? "");
+  const tone = getCourseColorByCategory(course?.category?.title ?? fallbackCourse?.category?.title ?? "");
   const heroClass = `${styles.hero} ${tone === "blue" ? styles.heroBlue : styles.heroOrange}`.trim();
   const ctaClass = `${styles.ctaButton} ${tone === "blue" ? styles.ctaBlue : styles.ctaOrange}`.trim();
 

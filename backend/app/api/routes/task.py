@@ -208,3 +208,127 @@ def submit_task_answer(
             for achievement in awarded_achievements
         ],
     )
+
+
+@router.post("/{task_id}/complete", response_model=TaskAnswerResponse)
+def complete_task_activity(
+    task_id: int,
+    session: Session = Depends(get_session),
+    user_id: int = Depends(get_current_user_id),
+):
+    task = session.get(Task, task_id)
+    if not task or not task.is_published:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+
+    if task.task_type == TaskType.LECTURE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lecture task does not require completion",
+        )
+
+    topic = session.get(Topic, task.topic_id)
+    if not topic:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Topic not found",
+        )
+
+    module = session.get(Module, topic.module_id)
+    if not module:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Module not found",
+        )
+
+    course = session.get(Course, module.course_id)
+    if not course or not course.is_published:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    user_course = session.exec(
+        select(UserCourse).where(
+            UserCourse.user_id == user_id,
+            UserCourse.course_id == course.id,
+        )
+    ).first()
+    if not user_course:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not enrolled in this course",
+        )
+
+    previous_answers = session.exec(
+        select(UserAnswer).where(
+            UserAnswer.user_id == user_id,
+            UserAnswer.task_id == task_id,
+        )
+    ).all()
+    attempt_number = len(previous_answers) + 1
+    already_solved = any(answer.is_correct for answer in previous_answers)
+    awarded_xp = task.xp_reward if not already_solved else 0
+
+    answer = UserAnswer(
+        task_id=task.id,
+        user_id=user_id,
+        answer_body="completed",
+        is_correct=True,
+        score=100,
+        awarded_xp=awarded_xp,
+        attempt=attempt_number,
+        checked_at=utc_now(),
+    )
+    session.add(answer)
+
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    awarded_achievements = []
+
+    if awarded_xp > 0:
+        user.total_xp += awarded_xp
+        user_course.xp_earned += awarded_xp
+        update_user_level(user)
+        awarded_achievements = check_and_award_level_achievements(session=session, user=user)
+        session.add(user)
+        session.add(user_course)
+
+    progress_percent = recalculate_user_course_progress(
+        session=session,
+        user_id=user_id,
+        course_id=course.id,
+    )
+
+    session.commit()
+    session.refresh(answer)
+    session.refresh(user)
+
+    return TaskAnswerResponse(
+        task_id=task.id,
+        is_correct=True,
+        score=answer.score,
+        awarded_xp=awarded_xp,
+        attempt=attempt_number,
+        progress_percent=progress_percent,
+        total_xp=user.total_xp,
+        level=user.level,
+        message="Completed",
+        awarded_achievements=[
+            AwardedAchievementPublic(
+                id=achievement.id,
+                title=achievement.title,
+                description=achievement.description,
+                icon_url=achievement.icon_url,
+                xp_reward=achievement.xp_reward,
+            )
+            for achievement in awarded_achievements
+        ],
+    )

@@ -24,6 +24,7 @@ class UserAchievementPublic(SQLModel):
     description: str | None = None
     icon_url: str | None = None
     xp_reward: int
+    condition_value: int | None = None
     received_at: datetime
 
 
@@ -217,6 +218,8 @@ def get_my_achievements(
         achievement = link.achievement
         if not achievement:
             continue
+        if achievement.xp_reward <= 0:
+            continue
 
         result.append(
             UserAchievementPublic(
@@ -225,6 +228,7 @@ def get_my_achievements(
                 description=achievement.description,
                 icon_url=achievement.icon_url,
                 xp_reward=achievement.xp_reward,
+                condition_value=achievement.condition_value,
                 received_at=link.created_at,
             )
         )

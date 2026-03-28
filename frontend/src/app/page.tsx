@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import {
   getApiErrorMessage,
   getHomeCourses,
 } from "@/shared/api/client";
+import { getCourseColorByCategory } from "@/shared/lib/courseColor";
 import { getAccessToken } from "@/shared/auth/tokens";
 import styles from "./page.module.css";
 
@@ -28,14 +29,8 @@ interface CatalogCourse {
   buttonTitle?: string;
 }
 
-function getCourseColor(category: string, index: number): "blue" | "orange" {
-  const normalized = category.toLowerCase();
-
-  if (normalized.includes("цифр") || normalized.includes("digital")) {
-    return "orange";
-  }
-
-  return index % 2 === 0 ? "blue" : "orange";
+function getCourseColor(category: string, _index: number): "blue" | "orange" {
+  return getCourseColorByCategory(category);
 }
 
 function mapCourse(
@@ -289,3 +284,4 @@ export default function Home() {
     </div>
   );
 }
+

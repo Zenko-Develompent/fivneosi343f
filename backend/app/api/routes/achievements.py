@@ -18,6 +18,7 @@ class AchievementPublic(SQLModel):
     description: str | None = None
     icon_url: str | None = None
     xp_reward: int
+    condition_value: int | None = None
     is_active: bool
 
 
@@ -27,6 +28,7 @@ class UserAchievementPublic(SQLModel):
     description: str | None = None
     icon_url: str | None = None
     xp_reward: int
+    condition_value: int | None = None
     received_at: datetime
 
 @router.get("", response_model=list[AchievementPublic])
@@ -36,7 +38,10 @@ def get_achievements(session: Session = Depends(get_session)):
 
     achievements = session.exec(
         select(Achievement)
-        .where(Achievement.is_active.is_(True))
+        .where(
+            Achievement.is_active.is_(True),
+            Achievement.xp_reward > 0,
+        )
         .order_by(Achievement.id)
     ).all()
 
@@ -47,6 +52,7 @@ def get_achievements(session: Session = Depends(get_session)):
             description=achievement.description,
             icon_url=achievement.icon_url,
             xp_reward=achievement.xp_reward,
+            condition_value=achievement.condition_value,
             is_active=achievement.is_active,
         )
         for achievement in achievements

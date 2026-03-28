@@ -100,6 +100,7 @@ export interface AchievementPublic {
   description: string | null;
   icon_url: string | null;
   xp_reward: number;
+  condition_value?: number | null;
   is_active: boolean;
 }
 
@@ -109,6 +110,7 @@ export interface UserAchievementPublic {
   description: string | null;
   icon_url: string | null;
   xp_reward: number;
+  condition_value?: number | null;
   received_at: string;
 }
 
@@ -372,5 +374,11 @@ export async function submitTaskAnswer(
     body: JSON.stringify({
       answer_body: answerBody,
     }),
+  });
+}
+
+export async function completeTaskActivity(taskId: number): Promise<TaskAnswerResponse> {
+  return request<TaskAnswerResponse>(`/tasks/${taskId}/complete`, {
+    method: "POST",
   });
 }

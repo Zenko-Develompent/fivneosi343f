@@ -17,6 +17,11 @@ interface HeaderProfile {
   totalXp: number;
 }
 
+interface ProfileXpUpdatedDetail {
+  totalXp?: number;
+  deltaXp?: number;
+}
+
 export default function Header() {
   const router = useRouter();
   const [isCabinetOpen, setIsCabinetOpen] = useState(false);
@@ -71,6 +76,41 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    if (!isCabinetOpen || !hasSession) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const refreshProfile = async () => {
+      try {
+        const response = await getMyProfile();
+
+        if (cancelled) {
+          return;
+        }
+
+        setProfile({
+          firstName: response.first_name,
+          lastName: response.last_name,
+          mail: response.mail,
+          totalXp: response.total_xp,
+        });
+      } catch {
+        if (!cancelled) {
+          setProfile(null);
+        }
+      }
+    };
+
+    void refreshProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasSession, isCabinetOpen]);
+
+  useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
       if (!profileWrapRef.current) {
         return;
@@ -87,11 +127,31 @@ export default function Header() {
       }
     }
 
+    function handleXpUpdated(event: Event) {
+      const detail = (event as CustomEvent<ProfileXpUpdatedDetail>).detail;
+      const totalXp = typeof detail?.totalXp === "number" ? detail.totalXp : null;
+      const deltaXp = typeof detail?.deltaXp === "number" ? detail.deltaXp : 0;
+
+      setProfile((previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        const nextTotalXp = totalXp ?? Math.max(0, previous.totalXp + deltaXp);
+        return {
+          ...previous,
+          totalXp: nextTotalXp,
+        };
+      });
+    }
+
     window.addEventListener("mousedown", handleOutsideClick);
     window.addEventListener("keydown", handleEscape);
+    window.addEventListener("profile:xp-updated", handleXpUpdated as EventListener);
     return () => {
       window.removeEventListener("mousedown", handleOutsideClick);
       window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("profile:xp-updated", handleXpUpdated as EventListener);
     };
   }, []);
 
